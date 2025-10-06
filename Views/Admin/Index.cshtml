@@ -1,0 +1,12 @@
+﻿@{
+    ViewData["Title"] = "Panel administratora";
+}
+
+<h2>Panel Administratora</h2>
+
+<ul class="p-4 border rounded bg-grey">
+    <li><a asp-action="Guides">Lista przewodników</a></li>
+    <li><a asp-action="Travelers">Lista podróżników</a></li>
+    <li><a asp-action="Trips">Lista wycieczek</a></li>
+</ul>
+<a href="@Url.Action("Index", "Home")" class="btn btn-secondary">Home</a>

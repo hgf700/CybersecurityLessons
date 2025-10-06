@@ -1,0 +1,32 @@
+﻿@using aspapp.Models.VM
+@model TravelerViewModel
+
+@{
+    ViewData["Title"] = "Delete Traveler";
+}
+
+<h2>Delete Traveler</h2>
+
+<h4>Are you sure you want to delete this traveler?</h4>
+
+<div>
+    <dl class="row" >
+        <dt class="col-sm-2">First Name</dt>
+        <dd class="col-sm-10">@Model.Firstname</dd>
+
+        <dt class="col-sm-2">Last Name</dt>
+        <dd class="col-sm-10">@Model.Lastname</dd>
+
+        <dt class="col-sm-2">Email</dt>
+        <dd class="col-sm-10">@Model.Email</dd>
+
+        <dt class="col-sm-2">Birth Date</dt>
+        <dd class="col-sm-10">@Model.BirthDate.ToShortDateString()</dd>
+    </dl>
+</div>
+
+<form asp-action="DeleteConfirmed" method="post">
+    <input type="hidden" asp-for="TravelerId" />
+    <button type="submit" class="btn btn-danger">Delete</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+</form>

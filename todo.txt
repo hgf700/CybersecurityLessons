@@ -1,0 +1,4 @@
+popraw testy jednostkowe ma sprawdzac czy jest wartosc i dla controllera zrobic
+poprawic dodawanie guide i traveler do bazy danych
+
+dac pg pgadmin dla wygladu lepiej i chyba tyle

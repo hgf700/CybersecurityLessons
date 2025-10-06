@@ -1,0 +1,47 @@
+﻿@model aspapp.Models.VM.TripViewModel
+
+@{
+    ViewData["Title"] = "Edit Trip";
+}
+
+<h2>Edit Trip</h2>
+
+<form asp-action="Edit" method="post">
+    <input type="hidden" asp-for="TripId" />
+
+    <div class="form-group">
+        <label asp-for="Destination"></label>
+        <input asp-for="Destination" class="form-control" />
+        <span asp-validation-for="Destination" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="StartDate"></label>
+        <input asp-for="StartDate" type="date" class="form-control" />
+        <span asp-validation-for="StartDate" class="text-danger"></span>
+    </div>
+
+
+    <div class="form-group">
+        <label asp-for="GuideId">Guide</label>
+        <select asp-for="GuideId" asp-items="@(new SelectList(Model.Guides, "GuideId", "Firstname"))" class="form-control">
+            <option value="">-- Select Guide --</option>
+        </select>
+        <span asp-validation-for="GuideId" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="TravelerId">Traveler</label>
+        <select asp-for="TravelerId" asp-items="@(new SelectList(Model.Travelers, "TravelerId", "Firstname"))" class="form-control">
+            <option value="">-- Select Traveler --</option>
+        </select>
+        <span asp-validation-for="TravelerId" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,22 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Mvc.Localization
+@inject UserManager<IdentityUser> UserManager
+@inject SignInManager<IdentityUser> SignInManager
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IViewLocalizer Localizer
+
+@{
+    ViewData["Title"] = "Home page";
+    var user = HttpContextAccessor.HttpContext?.User;
+}
+
+<div class="text-center">
+    <h1 class="display-4">@Localizer["Welcome"]</h1>
+    @if (user.IsInRole("Admin"))
+    {
+        <a href="@Url.Action("Index", "Admin")" class="btn btn-secondary">@Localizer["Admin"]</a>
+        <a href="@Url.Action("Index", "Guide")" class="btn btn-secondary">@Localizer["Guide"]</a>
+        <a href="@Url.Action("Index", "Traveler")" class="btn btn-secondary">@Localizer["Traveler"]</a>
+        <a href="@Url.Action("Index", "Trip")" class="btn btn-secondary">@Localizer["Trip"]</a>
+    }
+</div>
