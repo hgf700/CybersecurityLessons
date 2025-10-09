@@ -10,41 +10,27 @@ namespace aspapp.Repositories
     {
         private readonly TripContext _context;
 
+
         public TravelerRepository(TripContext context)
         {
             _context = context;
         }
 
-        // Pobierz wszystkich podróżników (bez śledzenia zmian)
-        public IQueryable<Traveler> GetAllTravelers(bool includeTrips = false)
+        public IQueryable<Traveler> GetAllTravelers()
         {
-            var query = _context.Travelers.AsQueryable();
-
-            // Jeśli chcesz dołączyć podróże, używamy Include
-            if (includeTrips)
-            {
-                query = query.Include(t => t.Trips);
-            }
-
-            return query.AsNoTracking();
+            var query = _context.Travelers.AsNoTracking();
+            return query;
         }
+
 
         // Pobierz podróżnika po ID z wycieczkami
-        public async Task<Traveler?> GetTravelerById(int travelerId, bool includeTrips = false)
+        public async Task<Traveler?> GetTravelerById(int travelerId)
         {
             var query = _context.Travelers.AsQueryable();
 
-            // Jeśli chcesz dołączyć podróże, używamy Include
-            if (includeTrips)
-            {
-                query = query.Include(t => t.Trips);
-            }
-
-            return await query.AsNoTracking()
-                               .FirstOrDefaultAsync(t => t.TravelerId == travelerId);
+            return await query.AsNoTracking().FirstOrDefaultAsync(t => t.TravelerId == travelerId);
         }
 
-        // Dodaj podróżnika
         public async Task AddTraveler(Traveler traveler)
         {
             // Sprawdzamy, czy podróżnik o tym samym emailu już istnieje

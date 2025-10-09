@@ -1,7 +1,6 @@
 using aspapp.Models;
 //using aspapp.Models.Validator;
 using aspapp.Repositories;
-using aspapp.Services;
 using Microsoft.EntityFrameworkCore;
 using FluentValidation;
 using Serilog;
@@ -27,12 +26,7 @@ builder.Services.AddDbContext<TripContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<ITravelerRepository, TravelerRepository>();
-builder.Services.AddScoped<IGuideRepository, GuideRepository>();
-builder.Services.AddScoped<ITripRepository, TripRepository>();
 
-builder.Services.AddScoped<ITravelerService, TravelerService>();
-builder.Services.AddScoped<ITripService, TripService>();
-builder.Services.AddScoped<IGuideService, GuideService>();
 
 builder.Services.AddControllersWithViews()
     .AddViewLocalization(LanguageViewLocationExpanderFormat.Suffix);
@@ -58,7 +52,7 @@ builder.Services.AddFluentValidationClientsideAdapters();
 
 //builder.Services.AddValidatorsFromAssemblyContaining<TripViewModelValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<TravelerViewModelValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<GuideViewModelValidator>();
+//builder.Services.AddValidatorsFromAssemblyContaining<GuideViewModelValidator>();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 

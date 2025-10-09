@@ -13,7 +13,6 @@ namespace aspapp.Models
         public string Email { get; set; } = string.Empty;
         public DateTime BirthDate { get; set; }
 
-        // Kolekcja podróży związanych z podróżnikiem
-        public ICollection<Trip> Trips { get; set; } = new List<Trip>(); // Many-to-many relationship with Trip
+
     }
 }
