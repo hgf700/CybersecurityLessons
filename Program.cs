@@ -1,5 +1,4 @@
 using aspapp.Models;
-//using aspapp.Models.Validator;
 using aspapp.Repositories;
 using Microsoft.EntityFrameworkCore;
 using FluentValidation;
@@ -9,10 +8,10 @@ using Microsoft.AspNetCore.Identity;
 using aspapp.ExtraTools;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using FluentValidation.AspNetCore;
-using aspapp.Data.Models.Validator;
 using Microsoft.AspNetCore.Mvc.Razor;
 using System.Globalization;
 using Microsoft.AspNetCore.Localization;
+using aspapp.Models.Validator;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,7 +50,7 @@ builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddFluentValidationClientsideAdapters();
 
 //builder.Services.AddValidatorsFromAssemblyContaining<TripViewModelValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<TravelerViewModelValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<TravelerValidator>();
 //builder.Services.AddValidatorsFromAssemblyContaining<GuideViewModelValidator>();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());

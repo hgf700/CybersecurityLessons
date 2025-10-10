@@ -22,6 +22,20 @@ namespace aspapp.Repositories
             return query;
         }
 
+        //public async Task ChangePassword(string email,string OldPassword,string NewPassword)
+        //{
+        //    // Sprawdzamy, czy podróżnik o tym samym emailu już istnieje
+        //    var existingTraveler = await _context.Travelers
+        //        .FirstOrDefaultAsync(t => t.Email == email);
+
+        //    if (existingTraveler != null)
+        //    {
+        //        throw new InvalidOperationException("Podróżnik z tym emailem już istnieje.");
+        //    }
+
+        //    await _context.Travelers.AddAsync(traveler);
+        //    await _context.SaveChangesAsync();
+        //}
 
         // Pobierz podróżnika po ID z wycieczkami
         public async Task<Traveler?> GetTravelerById(int travelerId)
@@ -31,16 +45,22 @@ namespace aspapp.Repositories
             return await query.AsNoTracking().FirstOrDefaultAsync(t => t.TravelerId == travelerId);
         }
 
-        public async Task AddTraveler(Traveler traveler)
+        public async Task AddTraveler(TravelerViewModel model)
         {
             // Sprawdzamy, czy podróżnik o tym samym emailu już istnieje
             var existingTraveler = await _context.Travelers
-                .FirstOrDefaultAsync(t => t.Email == traveler.Email);
+                .FirstOrDefaultAsync(t => t.Email == model.Email);
 
             if (existingTraveler != null)
             {
                 throw new InvalidOperationException("Podróżnik z tym emailem już istnieje.");
             }
+
+            Traveler traveler = new Traveler
+            {
+                Email = model.Email,
+                Password = model.Password 
+            };
 
             await _context.Travelers.AddAsync(traveler);
             await _context.SaveChangesAsync();

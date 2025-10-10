@@ -1,5 +1,5 @@
-﻿@using aspapp.Models.VM
-@model TravelerViewModel
+﻿@using aspapp.Models
+@model Traveler
 
 @{
     ViewData["Title"] = "Delete Traveler";
@@ -11,17 +11,11 @@
 
 <div>
     <dl class="row" >
-        <dt class="col-sm-2">First Name</dt>
-        <dd class="col-sm-10">@Model.Firstname</dd>
 
-        <dt class="col-sm-2">Last Name</dt>
-        <dd class="col-sm-10">@Model.Lastname</dd>
 
         <dt class="col-sm-2">Email</dt>
         <dd class="col-sm-10">@Model.Email</dd>
 
-        <dt class="col-sm-2">Birth Date</dt>
-        <dd class="col-sm-10">@Model.BirthDate.ToShortDateString()</dd>
     </dl>
 </div>
 

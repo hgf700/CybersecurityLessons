@@ -1,5 +1,5 @@
-﻿@using aspapp.Models.VM
-@model TravelerViewModel
+﻿@using aspapp.Models
+@model Traveler
 
 @{
     ViewData["Title"] = "Edit Traveler";
@@ -10,17 +10,6 @@
 <form asp-action="Edit" method="post">
     <input type="hidden" asp-for="TravelerId" />
 
-    <div class="form-group">
-        <label asp-for="Firstname"></label>
-        <input asp-for="Firstname" class="form-control" />
-        <span asp-validation-for="Firstname" class="text-danger"></span>
-    </div>
-
-    <div class="form-group">
-        <label asp-for="Lastname"></label>
-        <input asp-for="Lastname" class="form-control" />
-        <span asp-validation-for="Lastname" class="text-danger"></span>
-    </div>
 
     <div class="form-group">
         <label asp-for="Email"></label>
@@ -29,9 +18,9 @@
     </div>
 
     <div class="form-group">
-        <label asp-for="BirthDate"></label>
-        <input asp-for="BirthDate" class="form-control" type="date" />
-        <span asp-validation-for="BirthDate" class="text-danger"></span>
+        <label asp-for="Password"></label>
+        <input asp-for="Password" class="form-control" type="date" />
+        <span asp-validation-for="Password" class="text-danger"></span>
     </div>
 
     <button type="submit" class="btn btn-primary">Save Changes</button>

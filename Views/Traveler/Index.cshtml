@@ -1,5 +1,5 @@
-﻿@using aspapp.Models.VM
-@model IEnumerable<aspapp.Models.VM.TravelerViewModel>
+﻿@using aspapp.Models
+@model IEnumerable<aspapp.Models.Traveler> 
 @using Microsoft.AspNetCore.Identity
 
 @inject UserManager<IdentityUser> UserManager
@@ -20,10 +20,7 @@
 <table class="table">
     <thead>
         <tr>
-            <th>Firstname</th>
-            <th>Lastname</th>
             <th>Email</th>
-            <th>Birth Date</th>
             <th>Actions</th>
         </tr>
     </thead>
@@ -31,10 +28,7 @@
         @foreach (var traveler in Model)
         {
             <tr>
-                <td>@traveler.Firstname</td>
-                <td>@traveler.Lastname</td>
                 <td>@traveler.Email</td>
-                <td>@traveler.BirthDate.ToShortDateString()</td>
                 <td>
                     <!-- Add edit or delete links here, if required -->
                     <a href="@Url.Action("Edit", "Traveler", new { id = traveler.TravelerId })" class="btn btn-warning btn-sm">Edit</a>

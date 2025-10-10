@@ -1,4 +1,4 @@
-﻿@model IEnumerable<aspapp.Models.VM.TravelerViewModel>
+﻿@model IEnumerable<aspapp.Models.Traveler>
 @{
     ViewData["Title"] = "Podróżnicy";
 }
@@ -18,10 +18,7 @@
         @foreach (var traveler in Model)
         {
             <tr>
-                <td>@traveler.Firstname</td>
-                <td>@traveler.Lastname</td>
                 <td>@traveler.Email</td>
-                <td>@traveler.BirthDate.ToShortDateString()</td>
 
                 <td>
                     <!-- Add edit or delete links here, if required -->
