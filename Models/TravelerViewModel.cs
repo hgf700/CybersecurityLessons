@@ -4,6 +4,8 @@ namespace aspapp.Models
 {
     public class TravelerViewModel
     {
+        [Key]
+        public int TravelerId { get; set; }
         [Required]
         public string Email { get; set; } = string.Empty;
 

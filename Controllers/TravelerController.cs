@@ -22,74 +22,120 @@ namespace aspapp.Controllers
             _userManager = userManager;
         }
 
-        // Index GET
-        [AllowAnonymous]
+        [Authorize(Roles = "ADMIN")]
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            return View();
+            var travelers = _travelerService.GetAllTravelers(); // <-- pewnie typ Traveler
+
+            var travelerViewModels = travelers.Select(t => new TravelerViewModel
+            {
+                TravelerId = t.TravelerId,
+                Email = t.Email
+                // Password nie pokazujemy
+            });
+
+            return View(travelerViewModels); // <-- teraz poprawnie
         }
 
-        [AllowAnonymous]
+
+        [Authorize(Roles = "ADMIN")]
         [HttpGet("create")]
         public IActionResult Create() => View();
 
-        [AllowAnonymous]
+
+
+        [Authorize(Roles = "ADMIN")]
         [HttpPost("create")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Firstname,Lastname,Email,BirthDate")] Traveler traveler)
+        public async Task<IActionResult> Create([Bind("Email,Password,ConfirmPassword")] TravelerViewModel model)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
+                return View(model);
+
+            //identity autoamtycznie hashuje
+            var identityUser = new IdentityUser { UserName = model.Email, Email = model.Email};
+            var result = await _userManager.CreateAsync(identityUser, model.Password); 
+
+            if (result.Succeeded)
             {
-                var identityUser = new IdentityUser { UserName = traveler.Email, Email = traveler.Email, PasswordHash = traveler.Password };
-                var result = await _userManager.CreateAsync(identityUser);
+                await _userManager.AddToRoleAsync(identityUser, "User");
 
-                if (result.Succeeded)
+                Traveler traveler = new Traveler()
                 {
-                    await _travelerService.AddTraveler(traveler);
-                    return RedirectToAction(nameof(Index));
-                }
-                else
-                {
-                    foreach (var error in result.Errors)
-                    {
-                        ModelState.AddModelError(string.Empty, error.Description);
-                    }
-                }
-                return View(traveler);
+                    Email = model.Email,
+                    Password = identityUser.PasswordHash 
+                };
 
+                await _travelerService.AddTraveler(traveler);
+
+                return RedirectToAction(nameof(Index));
             }
-            return View(traveler);
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
+            return View("Index"); 
         }
 
-        //[Authorize(Roles = "Admin,User")]
-        [AllowAnonymous]
+
+        [Authorize(Roles = "ADMIN")]
         [HttpGet("edit/{id}")]
         public async Task<IActionResult> Edit(int id)
         {
             var traveler = await _travelerService.GetTravelerById(id);
-            if (traveler == null) return NotFound();
-            return View(traveler);
+            if (traveler == null) 
+                return NotFound(); 
+
+            var viewModel = new TravelerViewModel
+            {
+                TravelerId = traveler.TravelerId,
+                Email = traveler.Email,
+            };
+
+            return View(viewModel);
         }
 
-        //[Authorize(Roles = "Admin,User")]
-        [AllowAnonymous]
+        [Authorize(Roles = "ADMIN")]
         [HttpPost("edit/{id}")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("TravelerId,Firstname,Lastname,Email,BirthDate")] Traveler traveler)
+        public async Task<IActionResult> Edit(int id, [Bind("TravelerId,Email,Password,ConfirmPassword")] TravelerViewModel model)
         {
+            if (!ModelState.IsValid)
+                return View(model);
 
-            if (ModelState.IsValid)
+            var traveler = await _travelerService.GetTravelerById(id);
+            if (traveler == null)
+                return NotFound();
+
+            var identityUser = await _userManager.FindByEmailAsync(traveler.Email);
+            if (identityUser == null)
+                return NotFound();
+
+            if (!string.IsNullOrEmpty(model.Password) && model.Password == model.ConfirmPassword)
             {
-                await _travelerService.UpdateTraveler(traveler);
-                return RedirectToAction(nameof(Index));
+                var token = await _userManager.GeneratePasswordResetTokenAsync(identityUser);
+                var passwordResult = await _userManager.ResetPasswordAsync(identityUser, token, model.Password);
+                
+                if (!passwordResult.Succeeded)
+                {
+                    foreach (var error in passwordResult.Errors)
+                        ModelState.AddModelError("", error.Description);
+
+                    return View(model);
+                }
             }
-            return View(traveler);
+
+            traveler.Email = model.Email;
+            traveler.Password = identityUser.PasswordHash; 
+
+            await _travelerService.UpdateTraveler(traveler);
+
+            return RedirectToAction(nameof(Index));
         }
 
-        // Delete GET
-        //[Authorize(Roles = "Admin")]
-        [AllowAnonymous]
+
+        [Authorize(Roles = "ADMIN")]
         [HttpGet("delete/{id}")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -98,9 +144,7 @@ namespace aspapp.Controllers
             return View(traveler);
         }
 
-        // Delete POST
-        //[Authorize(Roles = "Admin")]
-        [AllowAnonymous]
+        [Authorize(Roles = "ADMIN")]
         [HttpPost("delete/{id}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)

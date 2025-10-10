@@ -49,9 +49,7 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddFluentValidationClientsideAdapters();
 
-//builder.Services.AddValidatorsFromAssemblyContaining<TripViewModelValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<TravelerValidator>();
-//builder.Services.AddValidatorsFromAssemblyContaining<GuideViewModelValidator>();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
@@ -62,20 +60,18 @@ builder.Services.Configure<IdentityOptions>(options =>
     // Password settings.
     options.Password.RequireDigit = true;
     options.Password.RequireLowercase = true;
-    //options.Password.RequireUppercase = true;
-    options.Password.RequiredLength = 1;
+    options.Password.RequireNonAlphanumeric = true;
+    options.Password.RequiredLength = 12;
 
     // Lockout settings.
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(1);
-    //options.Lockout.MaxFailedAccessAttempts = 10;
+    options.Lockout.MaxFailedAccessAttempts = 10;
     options.Lockout.AllowedForNewUsers = true;
 
     // User settings.
     options.User.AllowedUserNameCharacters =
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
     options.User.RequireUniqueEmail = false;
-
-
 });
 
 builder.Services.ConfigureApplicationCookie(options =>
@@ -106,7 +102,7 @@ app.UseRequestLocalization();
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    var roleNames = new[] { "Admin", "Guide", "User" };
+    var roleNames = new[] { "ADMIN",  "User" };
 
     foreach (var roleName in roleNames)
     {
