@@ -33,25 +33,19 @@
                         <li class="nav-item">
                             <a class="nav-link text-light" asp-controller="Home" asp-action="Index">@Localizer["Home"]</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-light" asp-controller="Traveler" asp-action="Create">@Localizer["Traveler"]</a>
-                        </li>
-
                         @if (User.Identity.IsAuthenticated)
                         {
-                            if (user.IsInRole("Guide") || user.IsInRole("Admin"))
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link text-light" asp-controller="Guide" asp-action="Create">@Localizer["Guide"]</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link text-light" asp-controller="Trip" asp-action="Create">@Localizer["Trip"]</a>
-                                </li>
-                            }
-                            if (user.IsInRole("Admin"))
+                            if (user.IsInRole("ADMIN"))
                             {
                                 <li class="nav-item">
                                     <a class="nav-link text-light" asp-controller="Admin" asp-action="Index">@Localizer["Admin"]</a>
+                                </li>
+                            }
+
+                            if (user.IsInRole("User"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-light" asp-controller="Traveler" asp-action="Edit">zmien haslo uzytkownika</a>
                                 </li>
                             }
                         }
@@ -91,12 +85,6 @@
             @RenderBody()
         </main>
     </div>
-
-    <footer class="border-top footer text-muted mt-auto py-3">
-        <div class="container">
-            &copy; 2025 - aspapp - <a asp-area="" asp-page="/Privacy">Privacy</a>
-        </div>
-    </footer>
 
     <!-- jQuery musi być pierwsze -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

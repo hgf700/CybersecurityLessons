@@ -12,11 +12,25 @@
 
 <div class="text-center">
     <h1 class="display-4">@Localizer["Welcome"]</h1>
-    @if (user.IsInRole("Admin"))
+
+
+    @if (user.IsInRole("User"))
+    {
+        <li class="nav-item">
+            <a class="nav-link text-light" asp-controller="Traveler" asp-action="Edit">zmien haslo uzytkownika</a>
+        </li>
+    }
+    else if (user.IsInRole("ADMIN"))
     {
         <a href="@Url.Action("Index", "Admin")" class="btn btn-secondary">@Localizer["Admin"]</a>
-        <a href="@Url.Action("Index", "Guide")" class="btn btn-secondary">@Localizer["Guide"]</a>
         <a href="@Url.Action("Index", "Traveler")" class="btn btn-secondary">@Localizer["Traveler"]</a>
-        <a href="@Url.Action("Index", "Trip")" class="btn btn-secondary">@Localizer["Trip"]</a>
+    }
+    else{
+        <li class="nav-item">
+            <a class="nav-link text-light" asp-area="Identity" asp-page="/Account/Login">@Localizer["Login"]</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-light" asp-area="Identity" asp-page="/Account/Register">@Localizer["Register"]</a>
+        </li>
     }
 </div>
