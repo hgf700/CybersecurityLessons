@@ -17,7 +17,7 @@
     @if (user.IsInRole("User"))
     {
         <li class="nav-item">
-            <a class="nav-link text-light" asp-controller="Traveler" asp-action="Edit">zmien haslo uzytkownika</a>
+            <a class="nav-link text-light" asp-controller="User" asp-action="Edit">zmien haslo uzytkownika</a>
         </li>
     }
     else if (user.IsInRole("ADMIN"))

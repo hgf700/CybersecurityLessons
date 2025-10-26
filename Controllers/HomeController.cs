@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using aspapp.Models;
-using aspapp.Repositories;
 
 
 namespace aspapp.Controllers
@@ -17,7 +16,7 @@ namespace aspapp.Controllers
 
         public IActionResult Index()
         {
-            return View();
+            return Redirect("/Identity/Account/Login");
         }
 
         public IActionResult Privacy()

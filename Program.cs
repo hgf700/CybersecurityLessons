@@ -1,5 +1,4 @@
 using aspapp.Models;
-using aspapp.Repositories;
 using Microsoft.EntityFrameworkCore;
 using FluentValidation;
 using Serilog;
@@ -11,7 +10,7 @@ using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Mvc.Razor;
 using System.Globalization;
 using Microsoft.AspNetCore.Localization;
-using aspapp.Models.Validator;
+//using aspapp.Models.Validator;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,12 +18,10 @@ var builder = WebApplication.CreateBuilder(args);
 //    .WriteTo.File("Logs/log.txt", rollingInterval: RollingInterval.Day)
 //    .CreateLogger();
 
-builder.Host.UseSerilog();
+//builder.Host.UseSerilog();
 
 builder.Services.AddDbContext<TripContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-builder.Services.AddScoped<ITravelerRepository, TravelerRepository>();
 
 
 builder.Services.AddControllersWithViews()
@@ -49,7 +46,7 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddFluentValidationClientsideAdapters();
 
-builder.Services.AddValidatorsFromAssemblyContaining<TravelerValidator>();
+//builder.Services.AddValidatorsFromAssemblyContaining<TravelerValidator>();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
@@ -58,10 +55,23 @@ builder.Services.AddRazorPages();
 builder.Services.Configure<IdentityOptions>(options =>
 {
     // Password settings.
-    options.Password.RequireDigit = true;
-    options.Password.RequireLowercase = true;
-    options.Password.RequireNonAlphanumeric = true;
-    options.Password.RequiredLength = 12;
+    bool strongPaswword = true;
+    if (strongPaswword)
+    {
+        options.Password.RequireDigit = true;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireNonAlphanumeric = true;
+        options.Password.RequiredLength = 12;
+    }
+    else
+    {
+        options.Password.RequireDigit = false;
+        options.Password.RequireLowercase = false;
+        options.Password.RequireUppercase = false;
+        options.Password.RequireNonAlphanumeric = false;
+        options.Password.RequiredLength = 3;
+    }
+    
 
     // Lockout settings.
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(1);
@@ -134,5 +144,7 @@ app.MapRazorPages();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+
 
 app.Run();

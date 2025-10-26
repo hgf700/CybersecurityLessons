@@ -1,25 +1,23 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using aspapp.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
-using aspapp.Models;
 using Microsoft.AspNetCore.Identity;
+using aspapp.Models.VM;
 
 namespace aspapp.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "ADMIN")]
     [Route("admin")]
     public class AdminController : Controller
     {
 
-        private readonly ITravelerRepository _travelerService;
+ 
         private readonly UserManager<IdentityUser> _userManager;
         string[] roleNames = { "ADMIN", "User" };
 
-        public AdminController(ITravelerRepository travelerService, UserManager<IdentityUser> userManager)
+        public AdminController(  UserManager<IdentityUser> userManager)
         {
             _userManager = userManager;
-            _travelerService = travelerService;
 
         }
 
@@ -28,48 +26,31 @@ namespace aspapp.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            var travelers = _travelerService.GetAllTravelers(); // <-- pewnie typ Traveler
 
-            var travelerViewModels = travelers.Select(t => new TravelerViewModel
-            {
-                TravelerId = t.TravelerId,
-                Email = t.Email
-                // Password nie pokazujemy
-            });
-
-            return View(travelerViewModels); // <-- teraz poprawnie
+            return View(); // <-- teraz poprawnie
         }
 
+        //[Authorize(Roles = "ADMIN")]
+        //[HttpGet("editadmin")]
+        //public async Task<IActionResult> Edit()
+        //{
+        //    return View();
+        //}
 
         [Authorize(Roles = "ADMIN")]
-        [HttpGet("create")]
-        public IActionResult Create() => View();
-
-
-
-        [Authorize(Roles = "ADMIN")]
-        [HttpPost("create")]
+        [HttpPost("CreateUser")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateUser([Bind("Email,Password,ConfirmPassword")] TravelerViewModel model)
+        public async Task<IActionResult> CreateUser(CreateUser model)
         {
             if (!ModelState.IsValid)
-                return View(model);
+                return View();
 
-            //identity autoamtycznie hashuje
             var identityUser = new IdentityUser { UserName = model.Email, Email = model.Email };
             var result = await _userManager.CreateAsync(identityUser, model.Password);
 
             if (result.Succeeded)
             {
                 await _userManager.AddToRoleAsync(identityUser, "User");
-
-                Traveler traveler = new Traveler()
-                {
-                    Email = model.Email,
-                    Password = identityUser.PasswordHash
-                };
-
-                await _travelerService.AddTraveler(traveler);
 
                 return RedirectToAction(nameof(Index));
             }
@@ -80,79 +61,236 @@ namespace aspapp.Controllers
             return View("Index");
         }
 
-
         [Authorize(Roles = "ADMIN")]
-        [HttpGet("edit/{id}")]
-        public async Task<IActionResult> Edit(int id)
-        {
-            var traveler = await _travelerService.GetTravelerById(id);
-            if (traveler == null)
-                return NotFound();
-
-            var viewModel = new TravelerViewModel
-            {
-                TravelerId = traveler.TravelerId,
-                Email = traveler.Email,
-            };
-
-            return View(viewModel);
-        }
-
-        [Authorize(Roles = "ADMIN")]
-        [HttpPost("edit/{id}")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("TravelerId,Email,Password,ConfirmPassword")] TravelerViewModel model)
+        [HttpPost("EditAdminPassword")]
+        public async Task<IActionResult> EditAdminPassword(EditAdminPassword model)
         {
             if (!ModelState.IsValid)
                 return View(model);
 
-            var traveler = await _travelerService.GetTravelerById(id);
-            if (traveler == null)
-                return NotFound();
+            // Pobranie aktualnego użytkownika
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return NotFound("Użytkownik nie został znaleziony.");
 
-            var identityUser = await _userManager.FindByEmailAsync(traveler.Email);
-            if (identityUser == null)
-                return NotFound();
-
-            if (!string.IsNullOrEmpty(model.Password) && model.Password == model.ConfirmPassword)
+            // Sprawdzenie poprawności aktualnego hasła
+            var passwordValid = await _userManager.CheckPasswordAsync(user, model.OldPassword);
+            if (!passwordValid)
             {
-                var token = await _userManager.GeneratePasswordResetTokenAsync(identityUser);
-                var passwordResult = await _userManager.ResetPasswordAsync(identityUser, token, model.Password);
-
-                if (!passwordResult.Succeeded)
-                {
-                    foreach (var error in passwordResult.Errors)
-                        ModelState.AddModelError("", error.Description);
-
-                    return View(model);
-                }
+                ModelState.AddModelError(string.Empty, "Niepoprawne obecne hasło.");
+                return View(model);
             }
 
-            traveler.Password = identityUser.PasswordHash;
+            // Próba zmiany hasła
+            var result = await _userManager.ChangePasswordAsync(user, model.OldPassword, model.NewPassword);
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                    ModelState.AddModelError(string.Empty, error.Description);
 
-            await _travelerService.UpdateTraveler(traveler);
+                return View(model);
+            }
 
-            return RedirectToAction(nameof(Index));
+            // Opcjonalnie: komunikat o sukcesie
+            ViewBag.Message = "Hasło zostało pomyślnie zmienione.";
+
+            return View(model);
         }
-
 
         [Authorize(Roles = "ADMIN")]
-        [HttpGet("delete/{id}")]
-        public async Task<IActionResult> Delete(int id)
+        [HttpPost("EditAdmin")]
+        public async Task<IActionResult> EditAdmin(EditAdmin model)
         {
-            var traveler = await _travelerService.GetTravelerById(id);
-            if (traveler == null) return NotFound();
-            return View(traveler);
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return NotFound("Użytkownik nie został znaleziony.");
+
+            // Sprawdzenie, czy nowa nazwa użytkownika lub e-mail są już zajęte
+            var existingUserByName = await _userManager.FindByNameAsync(model.UserName);
+            var existingUserByEmail = await _userManager.FindByEmailAsync(model.Email);
+
+            if (existingUserByName != null && existingUserByName.Id != user.Id)
+            {
+                ModelState.AddModelError("UserName", "Ta nazwa użytkownika jest już zajęta.");
+                return View(model);
+            }
+
+            if (existingUserByEmail != null && existingUserByEmail.Id != user.Id)
+            {
+                ModelState.AddModelError("Email", "Ten adres e-mail jest już zajęty.");
+                return View(model);
+            }
+
+            // Zmiana danych użytkownika
+            user.UserName = model.UserName;
+            user.Email = model.Email;
+
+            var updateResult = await _userManager.UpdateAsync(user);
+            if (!updateResult.Succeeded)
+            {
+                foreach (var error in updateResult.Errors)
+                    ModelState.AddModelError(string.Empty, error.Description);
+
+                return View(model);
+            }
+
+            ViewBag.Message = "Dane administratora zostały pomyślnie zaktualizowane.";
+            return View(model);
         }
 
         [Authorize(Roles = "ADMIN")]
-        [HttpPost("delete/{id}")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        [HttpGet("ShowUsers")]
+        public async Task<IActionResult> ShowUsers()
         {
-            await _travelerService.DeleteTraveler(id);
-            return RedirectToAction(nameof(Index));
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return NotFound("Użytkownik nie został znaleziony.");
+
+            ViewBag.Message = $"Zalogowano jako {user.Email}";
+
+            // Pobranie wszystkich użytkowników
+            var allUsers = _userManager.Users.ToList();
+
+            if (allUsers == null || !allUsers.Any())
+                return NotFound("Brak użytkowników w systemie.");
+
+            return View(allUsers);
         }
+
+        [Authorize(Roles = "ADMIN")]
+        [HttpPost("BlockAccount")]
+        public async Task<IActionResult> BlockAccount(BlockAccount model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            // Pobranie zalogowanego admina (tylko dla sprawdzenia)
+            var admin = await _userManager.GetUserAsync(User);
+            if (admin == null)
+                return NotFound("Zalogowany administrator nie został znaleziony.");
+
+            // Szukamy użytkownika po adresie e-mail
+            var targetUser = await _userManager.FindByEmailAsync(model.Email);
+            if (targetUser == null)
+            {
+                ModelState.AddModelError(string.Empty, "Użytkownik o podanym adresie e-mail nie istnieje.");
+                return View(model);
+            }
+
+            var daysToBlock = model.Days > 0 ? model.Days : 30;
+
+            // Ustawienie blokady
+            await _userManager.SetLockoutEndDateAsync(targetUser, DateTimeOffset.UtcNow.AddDays(daysToBlock));
+            await _userManager.UpdateAsync(targetUser);
+
+            ViewBag.Message = $"Użytkownik {targetUser.Email} został zablokowany na {daysToBlock} dni.";
+
+            return View(model);
+        }
+
+        [Authorize(Roles = "ADMIN")]
+        [HttpPost("DeleteAccount")]
+        public async Task<IActionResult> DeleteAccount(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                ModelState.AddModelError(string.Empty, "Adres e-mail jest wymagany.");
+                return View();
+            }
+
+            // Pobierz aktualnie zalogowanego admina (tylko dla walidacji)
+            var admin = await _userManager.GetUserAsync(User);
+            if (admin == null)
+                return NotFound("Zalogowany administrator nie został znaleziony.");
+
+            // Znajdź użytkownika po e-mailu
+            var targetUser = await _userManager.FindByEmailAsync(email);
+            if (targetUser == null)
+            {
+                ModelState.AddModelError(string.Empty, $"Użytkownik o adresie {email} nie istnieje.");
+                return View();
+            }
+
+            // Zabezpieczenie: admin nie może usunąć samego siebie
+            if (admin.Id == targetUser.Id)
+            {
+                ModelState.AddModelError(string.Empty, "Nie możesz usunąć własnego konta administracyjnego.");
+                return View();
+            }
+
+            // Usuń użytkownika
+            var result = await _userManager.DeleteAsync(targetUser);
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                    ModelState.AddModelError(string.Empty, error.Description);
+
+                return View();
+            }
+
+            ViewBag.Message = $"Użytkownik {targetUser.Email} został pomyślnie usunięty.";
+            return View();
+        }
+
+
+
+
+        //[Authorize(Roles = "ADMIN")]
+        //[HttpPost("BlockAccount")]
+        //public async Task<IActionResult> BlockAccount(string Email)
+        //{
+        //    return View();
+
+        //}
+
+
+        //[Authorize(Roles = "ADMIN")]
+        //[HttpPost("edit/{id}")]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> Edit()
+        //{
+
+        //    //var identityUser = await _userManager.FindByEmailAsync(traveler.Email);
+        //    //if (identityUser == null)
+        //    //    return NotFound();
+
+        //    //if (!string.IsNullOrEmpty(model.Password) && model.Password == model.ConfirmPassword)
+        //    //{
+        //    //    var token = await _userManager.GeneratePasswordResetTokenAsync(identityUser);
+        //    //    var passwordResult = await _userManager.ResetPasswordAsync(identityUser, token, model.Password);
+
+        //    //    if (!passwordResult.Succeeded)
+        //    //    {
+        //    //        foreach (var error in passwordResult.Errors)
+        //    //            ModelState.AddModelError("", error.Description);
+
+        //    //        return View(model);
+        //    //    }
+        //    //}
+
+        //    //return RedirectToAction(nameof(Index));
+        //}
+
+
+        //[Authorize(Roles = "ADMIN")]
+        //[HttpGet("delete/{id}")]
+        //public async Task<IActionResult> Delete(int id)
+        //{
+
+        //}
+
+        //[Authorize(Roles = "ADMIN")]
+        //[HttpPost("delete/{id}")]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> DeleteConfirmed(int id)
+        //{
+
+        //}
+
+
 
     }
 }
