@@ -1,91 +1,67 @@
-﻿//using aspapp.Models;
-//using aspapp.Repositories;
-//using Microsoft.AspNetCore.Authorization;
-//using Microsoft.AspNetCore.Identity;
-//using Microsoft.AspNetCore.Mvc;
-//using aspapp.Models;
+﻿using aspapp.Models;
+using aspapp.Models;
+using aspapp.Models.VM;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 
-//namespace aspapp.Controllers
-//{
-//    public class UserController : Controller
-//    {
-//        private readonly ITravelerRepository _travelerService;
-//        private readonly UserManager<IdentityUser> _userManager;
-//        string[] roleNames = { "ADMIN", "User" };
+namespace aspapp.Controllers
+{
+    public class UserController : Controller
+    {
+        private readonly UserManager<IdentityUser> _userManager;
+        string[] roleNames = { "ADMIN", "User" };
 
-//        public UserController(ITravelerRepository travelerService, UserManager<IdentityUser> userManager)
-//        {
-//            _userManager = userManager;
-//            _travelerService = travelerService;
+        public UserController(  UserManager<IdentityUser> userManager)
+        {
+            _userManager = userManager;
 
-//        }
+        }
 
-//        [Authorize(Roles = "ADMIN,User")]
-//        [HttpGet]
-//        public async Task<IActionResult> Index()
-//        {
-//            var users = 
+        [Authorize(Roles = "User")]
+        [HttpGet]
+        public async Task<IActionResult> Index()
+        {
+            
 
+            return View(); 
+        }
 
+        [Authorize(Roles = "User")]
+        [HttpGet("EditPasswordUser")]
+        public async Task<IActionResult> EditPasswordUser(EditPassword model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
 
-//            return View(users); // <-- teraz poprawnie
-//        }
+            // Pobranie aktualnego użytkownika
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return NotFound("Użytkownik nie został znaleziony.");
 
-//        [Authorize(Roles = "User,ADMIN")]
-//        [HttpGet("edit/{id}")]
-//        public async Task<IActionResult> Edit(int id)
-//        {
-//            var traveler = await _travelerService.GetTravelerById(id);
-//            if (traveler == null)
-//                return NotFound();
+            // Sprawdzenie poprawności aktualnego hasła
+            var passwordValid = await _userManager.CheckPasswordAsync(user, model.OldPassword);
+            if (!passwordValid)
+            {
+                ModelState.AddModelError(string.Empty, "Niepoprawne obecne hasło.");
+                return View(model);
+            }
 
-//            var viewModel = new TravelerViewModel
-//            {
-//                TravelerId = traveler.TravelerId,
-//                Email = traveler.Email,
-//            };
+            // Próba zmiany hasła
+            var result = await _userManager.ChangePasswordAsync(user, model.OldPassword, model.NewPassword);
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                    ModelState.AddModelError(string.Empty, error.Description);
 
-//            return View(viewModel);
-//        }
+                return View(model);
+            }
 
+            // Opcjonalnie: komunikat o sukcesie
+            ViewBag.Message = "Hasło zostało pomyślnie zmienione.";
 
-//        [Authorize(Roles = "User,ADMIN")]
-//        [HttpPost("edit/{id}")]
-//        [ValidateAntiForgeryToken]
-//        public async Task<IActionResult> Edit(int id, [Bind("TravelerId,Email,Password,ConfirmPassword")] TravelerViewModel model)
-//        {
-//            if (!ModelState.IsValid)
-//                return View(model);
+            return View(model);
+        }
 
-//            var traveler = await _travelerService.GetTravelerById(id);
-//            if (traveler == null)
-//                return NotFound();
-
-//            var identityUser = await _userManager.FindByEmailAsync(traveler.Email);
-//            if (identityUser == null)
-//                return NotFound();
-
-//            if (!string.IsNullOrEmpty(model.Password) && model.Password == model.ConfirmPassword)
-//            {
-//                var token = await _userManager.GeneratePasswordResetTokenAsync(identityUser);
-//                var passwordResult = await _userManager.ResetPasswordAsync(identityUser, token, model.Password);
-
-//                if (!passwordResult.Succeeded)
-//                {
-//                    foreach (var error in passwordResult.Errors)
-//                        ModelState.AddModelError("", error.Description);
-
-//                    return View(model);
-//                }
-//            }
-
-//            traveler.Password = identityUser.PasswordHash;
-
-//            await _travelerService.UpdateTraveler(traveler);
-
-//            return RedirectToAction(nameof(Index));
-//        }
-
-//    }
-
-//}
+    }
+}

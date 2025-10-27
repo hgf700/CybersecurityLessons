@@ -45,7 +45,7 @@ namespace aspapp.Controllers
             if (!ModelState.IsValid)
                 return View();
 
-            var identityUser = new IdentityUser { UserName = model.Email, Email = model.Email };
+            var identityUser = new IdentityUser { UserName = model.Email, Email = model.Email , };
             var result = await _userManager.CreateAsync(identityUser, model.Password);
 
             if (result.Succeeded)
@@ -63,7 +63,7 @@ namespace aspapp.Controllers
 
         [Authorize(Roles = "ADMIN")]
         [HttpPost("EditAdminPassword")]
-        public async Task<IActionResult> EditAdminPassword(EditAdminPassword model)
+        public async Task<IActionResult> EditAdminPassword(EditPassword model)
         {
             if (!ModelState.IsValid)
                 return View(model);

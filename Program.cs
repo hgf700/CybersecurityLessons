@@ -1,16 +1,17 @@
-using aspapp.Models;
-using Microsoft.EntityFrameworkCore;
-using FluentValidation;
-using Serilog;
-using AutoMapper;
-using Microsoft.AspNetCore.Identity;
+using aspapp.ApplicationUser;
 using aspapp.ExtraTools;
-using Microsoft.AspNetCore.Identity.UI.Services;
+using aspapp.Models;
+using aspapp.Validator;
+using AutoMapper;
+using FluentValidation;
 using FluentValidation.AspNetCore;
-using Microsoft.AspNetCore.Mvc.Razor;
-using System.Globalization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Localization;
-//using aspapp.Models.Validator;
+using Microsoft.AspNetCore.Mvc.Razor;
+using Microsoft.EntityFrameworkCore;
+using Serilog;
+using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +20,7 @@ var builder = WebApplication.CreateBuilder(args);
 //    .CreateLogger();
 
 //builder.Host.UseSerilog();
+
 
 builder.Services.AddDbContext<TripContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -54,25 +56,6 @@ builder.Services.AddRazorPages();
 
 builder.Services.Configure<IdentityOptions>(options =>
 {
-    // Password settings.
-    bool strongPaswword = true;
-    if (strongPaswword)
-    {
-        options.Password.RequireDigit = true;
-        options.Password.RequireLowercase = true;
-        options.Password.RequireNonAlphanumeric = true;
-        options.Password.RequiredLength = 12;
-    }
-    else
-    {
-        options.Password.RequireDigit = false;
-        options.Password.RequireLowercase = false;
-        options.Password.RequireUppercase = false;
-        options.Password.RequireNonAlphanumeric = false;
-        options.Password.RequiredLength = 3;
-    }
-    
-
     // Lockout settings.
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(1);
     options.Lockout.MaxFailedAccessAttempts = 10;
@@ -96,16 +79,39 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.SlidingExpiration = true;
 });
 
-builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
     options.SignIn.RequireConfirmedAccount = false;
 })
 .AddEntityFrameworkStores<TripContext>()
 .AddDefaultTokenProviders();
 
+builder.Services.AddTransient<IPasswordValidator<ApplicationUser>, DynamicPasswordValidator<ApplicationUser>>();
+
 builder.Services.AddTransient<IEmailSender, NullEmailSender>();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<TripContext>();
+
+    // Sprawdzenie, czy w tabeli SecuritySettings jest ju¿ rekord
+    if (!context.SecuritySettings.Any())
+    {
+        context.SecuritySettings.Add(new SecuritySettings
+        {
+            RequiredLength = 12,
+            RequireDigit = true,
+            RequireUppercase = false,
+            RequireNonAlphanumeric = true,
+            RequireLowercase = false
+        });
+
+        context.SaveChanges();
+    }
+}
 
 app.UseRequestLocalization();
 
@@ -144,7 +150,5 @@ app.MapRazorPages();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
-
-
 
 app.Run();

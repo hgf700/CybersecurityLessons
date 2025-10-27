@@ -128,7 +128,7 @@ namespace aspapp.Areas.Identity.Pages.Account
                 }
                 else
                 {
-                    ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                    ModelState.AddModelError(string.Empty, "Login lub Hasło niepoprawny");
                     return Page();
                 }
             }

@@ -2,7 +2,7 @@
 
 namespace aspapp.Models.VM
 {
-    public class EditAdminPassword
+    public class EditPassword
     {
         [Required]
         [DataType(DataType.Password)]
