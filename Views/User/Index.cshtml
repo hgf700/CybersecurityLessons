@@ -1,1 +1,13 @@
-﻿
+﻿@{
+    ViewData["Title"] = "Strona użytkownika";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<p>Witaj, @User.Identity.Name!</p>
+
+<p>
+    <a asp-action="EditPasswordUser" class="btn btn-primary">Zmień hasło</a>
+</p>
+
+<p>To jest strona dostępna tylko dla użytkowników z rolą <strong>User</strong>.</p>

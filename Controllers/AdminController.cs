@@ -30,7 +30,7 @@ namespace aspapp.Controllers
 
         [Authorize(Roles = "ADMIN")]
         [HttpGet("CreateUser")]
-        public async Task<IActionResult> CreateUserView()
+        public async Task<IActionResult> CreateUser()
         {
             return View();
         }
@@ -61,7 +61,7 @@ namespace aspapp.Controllers
 
         [Authorize(Roles = "ADMIN")]
         [HttpGet("EditAdminPassword")]
-        public async Task<IActionResult> EditAdminPasswordView()
+        public async Task<IActionResult> EditAdminPassword()
         {
             return View();
         }
@@ -105,7 +105,7 @@ namespace aspapp.Controllers
 
         [Authorize(Roles = "ADMIN")]
         [HttpGet("EditAdmin")]
-        public async Task<IActionResult> EditAdminView()
+        public async Task<IActionResult> EditAdmin()
         {
             return View();
         }
@@ -176,7 +176,7 @@ namespace aspapp.Controllers
 
         [Authorize(Roles = "ADMIN")]
         [HttpGet("BlockAccount")]
-        public async Task<IActionResult> BlockAccountView()
+        public async Task<IActionResult> BlockAccount()
         {
             return View();
         }
@@ -215,7 +215,7 @@ namespace aspapp.Controllers
 
         [Authorize(Roles = "ADMIN")]
         [HttpGet("DeleteAccount")]
-        public async Task<IActionResult> DeleteAccountView()
+        public async Task<IActionResult> DeleteAccount()
         {
             return View();
         }

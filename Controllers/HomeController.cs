@@ -16,7 +16,14 @@ namespace aspapp.Controllers
 
         public IActionResult Index()
         {
-            return Redirect("/Identity/Account/Login");
+            if (!User.Identity.IsAuthenticated)
+            {
+                // jeśli nie, przenieś na login
+                return Redirect("/Identity/Account/Login");
+            }
+
+            // jeśli zalogowany, pokaż normalną stronę startową
+            return View();
         }
 
         public IActionResult Privacy()

@@ -22,13 +22,19 @@ namespace aspapp.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            
-
             return View(); 
         }
 
         [Authorize(Roles = "User")]
         [HttpGet("EditPasswordUser")]
+        public async Task<IActionResult> EditPasswordUser()
+        {
+            return View();
+        }
+
+        [Authorize(Roles = "User")]
+        [HttpPost("EditPasswordUser")]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditPasswordUser(EditPassword model)
         {
             if (!ModelState.IsValid)

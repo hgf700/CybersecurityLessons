@@ -16,6 +16,7 @@
 
     @if (user.IsInRole("User"))
     {
+        <a href="@Url.Action("Index", "User")" class="btn btn-secondary">User</a>
         <li class="nav-item">
             <a class="nav-link text-light" asp-controller="User" asp-action="Edit">zmien haslo uzytkownika</a>
         </li>
@@ -23,7 +24,6 @@
     else if (user.IsInRole("ADMIN"))
     {
         <a href="@Url.Action("Index", "Admin")" class="btn btn-secondary">@Localizer["Admin"]</a>
-        <a href="@Url.Action("Index", "Traveler")" class="btn btn-secondary">@Localizer["Traveler"]</a>
     }
     else{
         <li class="nav-item">

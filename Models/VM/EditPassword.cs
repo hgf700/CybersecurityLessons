@@ -11,5 +11,9 @@ namespace aspapp.Models.VM
         [Required]
         [DataType(DataType.Password)]
         public string NewPassword;
+
+        [Required]
+        [DataType(DataType.Password)]
+        public string ConfirmPassword;
     }
 }
