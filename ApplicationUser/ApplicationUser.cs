@@ -2,7 +2,7 @@
 
 namespace aspapp.ApplicationUser
 {
-    public class ApplicationUser : IdentityUser
+    public class ApplicationUse : IdentityUser
     {
         public bool MustChangePassword { get; set; } = true;
     }

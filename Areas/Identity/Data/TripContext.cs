@@ -5,8 +5,9 @@ using aspapp.ApplicationUser;
 
 namespace aspapp.Models
 {
+    //IdentityUser
     //ApplicationUser
-    public class TripContext : IdentityDbContext<IdentityUser>
+    public class TripContext : IdentityDbContext<ApplicationUse>
     {
         public TripContext(DbContextOptions<TripContext> options) : base(options) { }
 
@@ -15,7 +16,6 @@ namespace aspapp.Models
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-
         }
     }
 

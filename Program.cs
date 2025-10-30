@@ -21,10 +21,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 //builder.Host.UseSerilog();
 
-
 builder.Services.AddDbContext<TripContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
 
 builder.Services.AddControllersWithViews()
     .AddViewLocalization(LanguageViewLocationExpanderFormat.Suffix);
@@ -47,8 +45,6 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddFluentValidationClientsideAdapters();
-
-//builder.Services.AddValidatorsFromAssemblyContaining<TravelerValidator>();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
@@ -79,14 +75,14 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.SlidingExpiration = true;
 });
 
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+builder.Services.AddIdentity<ApplicationUse, IdentityRole>(options =>
 {
     options.SignIn.RequireConfirmedAccount = false;
 })
 .AddEntityFrameworkStores<TripContext>()
 .AddDefaultTokenProviders();
 
-builder.Services.AddTransient<IPasswordValidator<ApplicationUser>, DynamicPasswordValidator<ApplicationUser>>();
+builder.Services.AddTransient<IPasswordValidator<ApplicationUse>, DynamicPasswordValidator<ApplicationUse>>();
 
 builder.Services.AddTransient<IEmailSender, NullEmailSender>();
 
