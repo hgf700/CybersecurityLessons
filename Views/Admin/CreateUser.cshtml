@@ -1,0 +1,28 @@
+﻿@model aspapp.Models.VM.CreateUser
+@{
+    ViewData["Title"] = "Utwórz użytkownika";
+}
+
+<div class="container mt-4">
+    <h2>Utwórz nowego użytkownika</h2>
+    <hr />
+
+    <form asp-action="CreateUser" method="post">
+        @Html.AntiForgeryToken()
+
+        <div class="mb-3">
+            <label asp-for="Email" class="form-label">E-mail</label>
+            <input asp-for="Email" class="form-control" />
+            <span asp-validation-for="Email" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Password" class="form-label">Hasło</label>
+            <input asp-for="Password" class="form-control" type="password" />
+            <span asp-validation-for="Password" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Utwórz</button>
+        <a href="@Url.Action("Index")" class="btn btn-secondary">Powrót</a>
+    </form>
+</div>

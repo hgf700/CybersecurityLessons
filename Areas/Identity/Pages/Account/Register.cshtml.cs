@@ -24,18 +24,18 @@ namespace aspapp.Areas.Identity.Pages.Account
 {
     public class RegisterModel : PageModel
     {
-        private readonly SignInManager<IdentityUser> _signInManager;
-        private readonly UserManager<IdentityUser> _userManager;
-        private readonly IUserStore<IdentityUser> _userStore;
-        private readonly IUserEmailStore<IdentityUser> _emailStore;
+        private readonly SignInManager<aspapp.ApplicationUser.ApplicationUse> _signInManager;
+        private readonly UserManager<aspapp.ApplicationUser.ApplicationUse> _userManager;
+        private readonly IUserStore<aspapp.ApplicationUser.ApplicationUse> _userStore;
+        private readonly IUserEmailStore<aspapp.ApplicationUser.ApplicationUse> _emailStore;
         private readonly ILogger<RegisterModel> _logger;
         private readonly IEmailSender _emailSender;
         private readonly RoleManager<IdentityRole> _roleManager;
 
         public RegisterModel(
-            UserManager<IdentityUser> userManager,
-            IUserStore<IdentityUser> userStore,
-            SignInManager<IdentityUser> signInManager,
+            UserManager<aspapp.ApplicationUser.ApplicationUse> userManager,
+            IUserStore<aspapp.ApplicationUser.ApplicationUse> userStore,
+            SignInManager<aspapp.ApplicationUser.ApplicationUse> signInManager,
             ILogger<RegisterModel> logger,
             RoleManager<IdentityRole> roleManager,
             IEmailSender emailSender)
@@ -175,27 +175,27 @@ namespace aspapp.Areas.Identity.Pages.Account
             return Page();
         }
 
-        private IdentityUser CreateUser()
+        private aspapp.ApplicationUser.ApplicationUse CreateUser()
         {
             try
             {
-                return Activator.CreateInstance<IdentityUser>();
+                return Activator.CreateInstance<aspapp.ApplicationUser.ApplicationUse>();
             }
             catch
             {
-                throw new InvalidOperationException($"Can't create an instance of '{nameof(IdentityUser)}'. " +
-                    $"Ensure that '{nameof(IdentityUser)}' is not an abstract class and has a parameterless constructor, or alternatively " +
+                throw new InvalidOperationException($"Can't create an instance of '{nameof(aspapp.ApplicationUser.ApplicationUse)}'. " +
+                    $"Ensure that '{nameof(aspapp.ApplicationUser.ApplicationUse)}' is not an abstract class and has a parameterless constructor, or alternatively " +
                     $"override the register page in /Areas/Identity/Pages/Account/Register.cshtml");
             }
         }
 
-        private IUserEmailStore<IdentityUser> GetEmailStore()
+        private IUserEmailStore<aspapp.ApplicationUser.ApplicationUse> GetEmailStore()
         {
             if (!_userManager.SupportsUserEmail)
             {
                 throw new NotSupportedException("The default UI requires a user store with email support.");
             }
-            return (IUserEmailStore<IdentityUser>)_userStore;
+            return (IUserEmailStore<aspapp.ApplicationUser.ApplicationUse>)_userStore;
         }
     }
 }

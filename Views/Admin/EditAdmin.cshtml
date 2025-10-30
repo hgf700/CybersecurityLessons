@@ -1,0 +1,33 @@
+﻿@model aspapp.Models.VM.EditAdmin
+@{
+    ViewData["Title"] = "Edytuj dane administratora";
+}
+
+<div class="container mt-4">
+    <h2>Edytuj dane administratora</h2>
+    <hr />
+
+    <form asp-action="EditAdmin" method="post">
+        @Html.AntiForgeryToken()
+
+        <div class="mb-3">
+            <label asp-for="UserName" class="form-label">Nazwa użytkownika</label>
+            <input asp-for="UserName" class="form-control" />
+            <span asp-validation-for="UserName" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Email" class="form-label">Adres e-mail</label>
+            <input asp-for="Email" class="form-control" />
+            <span asp-validation-for="Email" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-success">Zapisz zmiany</button>
+        <a href="@Url.Action("Index")" class="btn btn-secondary">Powrót</a>
+
+        @if (ViewBag.Message != null)
+        {
+            <div class="alert alert-success mt-3">@ViewBag.Message</div>
+        }
+    </form>
+</div>

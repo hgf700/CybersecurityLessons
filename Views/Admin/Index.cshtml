@@ -2,9 +2,21 @@
     ViewData["Title"] = "Panel administratora";
 }
 
-<h2>Panel Administratora</h2>
+<div class="container mt-4">
+    <h2>Panel administratora</h2>
+    <hr />
 
-<ul class="p-4 border rounded bg-grey">
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert alert-success">@TempData["Message"]</div>
+    }
 
-</ul>
-<a href="@Url.Action("Index", "Home")" class="btn btn-secondary">Home</a>
+    <div class="list-group">
+        <a href="@Url.Action("CreateUser", "Admin")" class="list-group-item list-group-item-action">➕ Utwórz nowego użytkownika</a>
+        <a href="@Url.Action("ShowUsers", "Admin")" class="list-group-item list-group-item-action">👥 Lista użytkowników</a>
+        <a href="@Url.Action("EditAdmin", "Admin")" class="list-group-item list-group-item-action">✏️ Edytuj dane administratora</a>
+        <a href="@Url.Action("EditAdminPassword", "Admin")" class="list-group-item list-group-item-action">🔐 Zmień hasło administratora</a>
+        <a href="@Url.Action("BlockAccount", "Admin")" class="list-group-item list-group-item-action">🚫 Zablokuj konto użytkownika</a>
+        <a href="@Url.Action("DeleteAccount", "Admin")" class="list-group-item list-group-item-action">🗑️ Usuń konto użytkownika</a>
+    </div>
+</div>

@@ -4,7 +4,7 @@ using aspapp.Models; // Twój TripContext
 
 namespace aspapp.Validator
 {
-    public class DynamicPasswordValidator<TUser> : IPasswordValidator<TUser> where TUser : IdentityUser
+    public class DynamicPasswordValidator<TUser> : IPasswordValidator<TUser> where TUser : aspapp.ApplicationUser.ApplicationUse
     {
         private readonly TripContext _context;
 

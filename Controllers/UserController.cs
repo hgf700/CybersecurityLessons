@@ -9,10 +9,10 @@ namespace aspapp.Controllers
 {
     public class UserController : Controller
     {
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly UserManager<aspapp.ApplicationUser.ApplicationUse> _userManager;
         string[] roleNames = { "ADMIN", "User" };
 
-        public UserController(  UserManager<IdentityUser> userManager)
+        public UserController(  UserManager<aspapp.ApplicationUser.ApplicationUse> userManager)
         {
             _userManager = userManager;
 
