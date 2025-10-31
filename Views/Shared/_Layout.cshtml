@@ -40,12 +40,14 @@
                                 <li class="nav-item">
                                     <a class="nav-link text-light" asp-controller="Admin" asp-action="Index">@Localizer["Admin"]</a>
                                 </li>
-                                <p>Admin</p>
+
                             }
 
                             if (user.IsInRole("User"))
                             {
-                                <p>User</p>
+                                <li class="nav-item">
+                                    <a class="nav-link text-light" asp-controller="User" asp-action="Index">user</a>
+                                </li>
                             }
                         }
                     </ul>

@@ -11,12 +11,6 @@
         @Html.AntiForgeryToken()
 
         <div class="mb-3">
-            <label asp-for="Email" class="form-label">E-mail użytkownika</label>
-            <input asp-for="Email" class="form-control" />
-            <span asp-validation-for="Email" class="text-danger"></span>
-        </div>
-
-        <div class="mb-3">
             <label asp-for="Days" class="form-label">Na ile dni zablokować?</label>
             <input asp-for="Days" type="number" class="form-control" />
             <span asp-validation-for="Days" class="text-danger"></span>

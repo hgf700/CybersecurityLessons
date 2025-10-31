@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using aspapp.Models.VM;
 using Microsoft.AspNetCore.Authorization;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
-using aspapp.Models.VM;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
 namespace aspapp.Controllers
 {
@@ -11,13 +12,19 @@ namespace aspapp.Controllers
     public class AdminController : Controller
     {
 
- 
         private readonly UserManager<aspapp.ApplicationUser.ApplicationUse> _userManager;
+        private readonly IUserStore<aspapp.ApplicationUser.ApplicationUse> _userStore;
+        private readonly IUserEmailStore<aspapp.ApplicationUser.ApplicationUse> _emailStore;
         string[] roleNames = { "ADMIN", "User" };
 
-        public AdminController(  UserManager<aspapp.ApplicationUser.ApplicationUse> userManager)
+        public AdminController(  UserManager<aspapp.ApplicationUser.ApplicationUse> userManager,
+            IUserStore<aspapp.ApplicationUser.ApplicationUse> userStore,
+            IUserEmailStore<aspapp.ApplicationUser.ApplicationUse> emailStore)
         {
             _userManager = userManager;
+            _userStore= userStore;
+            _emailStore = emailStore;
+
         }
 
         [Authorize(Roles = "ADMIN")]
@@ -25,7 +32,35 @@ namespace aspapp.Controllers
         public async Task<IActionResult> Index()
         {
 
-            return View(); // <-- teraz poprawnie
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return NotFound("Użytkownik nie został znaleziony.");
+
+            ViewBag.Message = $"Zalogowano jako {user.Email}";
+
+            // Pobranie wszystkich użytkowników
+            var userList = new List<UserWithRoleViewModel>();
+
+            var allUsers = _userManager.Users.ToList();
+
+            foreach (var u in allUsers)
+            {
+                var roles = await _userManager.GetRolesAsync(u);
+                userList.Add(new UserWithRoleViewModel
+                {
+                    Id = u.Id,
+                    Email = u.Email,
+                    UserName = u.UserName,
+                    Roles = roles.ToList()
+                });
+            }
+
+            return View(userList);
+
+            if (allUsers == null || !allUsers.Any())
+                return NotFound("Brak użytkowników w systemie.");
+
+            return View(allUsers);
         }
 
         [Authorize(Roles = "ADMIN")]
@@ -43,13 +78,33 @@ namespace aspapp.Controllers
             if (!ModelState.IsValid)
                 return View();
 
-            var identityUser = new aspapp.ApplicationUser.ApplicationUse { UserName = model.Email, Email = model.Email , };
+            var targetUser = await _userManager.FindByEmailAsync(model.Email);
+            if (targetUser != null)
+            {
+                ModelState.AddModelError(string.Empty, "Użytkownik o podanym adresie e-mail nie istnieje.");
+                return View(model);
+            }
+
+            if (model.Password != model.ConfirmPassword)
+            {
+                ModelState.AddModelError(string.Empty, "hasła nie są takie same.");
+                return View(model);
+            }
+
+            var identityUser = new aspapp.ApplicationUser.ApplicationUse
+            {
+                UserName = model.Email,
+                Email = model.Email,
+                LockoutEnabled = true,
+                MustChangePassword = true 
+            };
+
             var result = await _userManager.CreateAsync(identityUser, model.Password);
 
             if (result.Succeeded)
             {
                 await _userManager.AddToRoleAsync(identityUser, "User");
-
+                TempData["Message"] = "Użytkownik został utworzony.";
                 return RedirectToAction(nameof(Index));
             }
             foreach (var error in result.Errors)
@@ -57,6 +112,7 @@ namespace aspapp.Controllers
                 ModelState.AddModelError(string.Empty, error.Description);
             }
             return View("Index");
+            //return View(model);
         }
 
         [Authorize(Roles = "ADMIN")]
@@ -87,7 +143,12 @@ namespace aspapp.Controllers
                 return View(model);
             }
 
-            // Próba zmiany hasła
+            if (model.NewPassword != model.ConfirmPassword)
+            {
+                ModelState.AddModelError(string.Empty, "Nowe hasła nie są takie same.");
+                return View(model);
+            }
+
             var result = await _userManager.ChangePasswordAsync(user, model.OldPassword, model.NewPassword);
             if (!result.Succeeded)
             {
@@ -100,7 +161,7 @@ namespace aspapp.Controllers
             // Opcjonalnie: komunikat o sukcesie
             ViewBag.Message = "Hasło zostało pomyślnie zmienione.";
 
-            return View(model);
+            return View(Index);
         }
 
         [Authorize(Roles = "ADMIN")]
@@ -124,7 +185,6 @@ namespace aspapp.Controllers
 
             // Sprawdzenie, czy nowa nazwa użytkownika lub e-mail są już zajęte
             var existingUserByName = await _userManager.FindByNameAsync(model.UserName);
-            var existingUserByEmail = await _userManager.FindByEmailAsync(model.Email);
 
             if (existingUserByName != null && existingUserByName.Id != user.Id)
             {
@@ -132,15 +192,8 @@ namespace aspapp.Controllers
                 return View(model);
             }
 
-            if (existingUserByEmail != null && existingUserByEmail.Id != user.Id)
-            {
-                ModelState.AddModelError("Email", "Ten adres e-mail jest już zajęty.");
-                return View(model);
-            }
-
             // Zmiana danych użytkownika
             user.UserName = model.UserName;
-            user.Email = model.Email;
 
             var updateResult = await _userManager.UpdateAsync(user);
             if (!updateResult.Succeeded)
@@ -153,25 +206,6 @@ namespace aspapp.Controllers
 
             ViewBag.Message = "Dane administratora zostały pomyślnie zaktualizowane.";
             return View(model);
-        }
-
-        [Authorize(Roles = "ADMIN")]
-        [HttpGet("ShowUsers")]
-        public async Task<IActionResult> ShowUsers()
-        {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-                return NotFound("Użytkownik nie został znaleziony.");
-
-            ViewBag.Message = $"Zalogowano jako {user.Email}";
-
-            // Pobranie wszystkich użytkowników
-            var allUsers = _userManager.Users.ToList();
-
-            if (allUsers == null || !allUsers.Any())
-                return NotFound("Brak użytkowników w systemie.");
-
-            return View(allUsers);
         }
 
         [Authorize(Roles = "ADMIN")]
@@ -200,6 +234,12 @@ namespace aspapp.Controllers
             {
                 ModelState.AddModelError(string.Empty, "Użytkownik o podanym adresie e-mail nie istnieje.");
                 return View(model);
+            }
+
+            if (admin.Id == targetUser.Id)
+            {
+                ModelState.AddModelError(string.Empty, "Nie możesz zablokować własnego konta administracyjnego.");
+                return View();
             }
 
             var daysToBlock = model.Days > 0 ? model.Days : 30;

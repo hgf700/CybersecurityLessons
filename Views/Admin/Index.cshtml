@@ -11,12 +11,58 @@
         <div class="alert alert-success">@TempData["Message"]</div>
     }
 
-    <div class="list-group">
+    <div class="list-group mb-4">
         <a href="@Url.Action("CreateUser", "Admin")" class="list-group-item list-group-item-action">➕ Utwórz nowego użytkownika</a>
-        <a href="@Url.Action("ShowUsers", "Admin")" class="list-group-item list-group-item-action">👥 Lista użytkowników</a>
         <a href="@Url.Action("EditAdmin", "Admin")" class="list-group-item list-group-item-action">✏️ Edytuj dane administratora</a>
         <a href="@Url.Action("EditAdminPassword", "Admin")" class="list-group-item list-group-item-action">🔐 Zmień hasło administratora</a>
-        <a href="@Url.Action("BlockAccount", "Admin")" class="list-group-item list-group-item-action">🚫 Zablokuj konto użytkownika</a>
-        <a href="@Url.Action("DeleteAccount", "Admin")" class="list-group-item list-group-item-action">🗑️ Usuń konto użytkownika</a>
     </div>
+
+    <h2>Lista użytkowników</h2>
+    <hr />
+
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr>
+                <th>Email</th>
+                <th>Nazwa użytkownika</th>
+                <th>role</th>
+                <th>Akcje</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Model)
+            {
+                <tr>
+                    <td>@user.Email</td>
+                    <td>@user.UserName</td>
+                    <td>@string.Join(", ", user.Roles)</td>
+                    <td>
+                        <form asp-action="BlockAccount" asp-controller="Admin" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="Email" value="@user.Email" />
+                            <input type="hidden" name="BlockedID" value="@user.Id" />
+                            <input type="hidden" name="Days" value="30" /> <!-- np. 30 dni domyślnie -->
+
+                            <button type="submit" class="btn btn-warning btn-sm"
+                                    onclick="return confirm('Czy na pewno chcesz zablokować tego użytkownika?');">
+                                🚫 Zablokuj
+                            </button>
+                        </form>
+
+                        <form asp-action="DeleteAccount" asp-controller="Admin" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@user.Id" />
+
+                            <button type="submit" class="btn btn-danger btn-sm"
+                                    onclick="return confirm('Czy na pewno chcesz usunąć tego użytkownika?');">
+                                🗑️ Usuń
+                            </button>
+                        </form>
+                    </td>
+
+                </tr>
+            }
+        </tbody>
+    </table>
+
 </div>
