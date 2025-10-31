@@ -1,4 +1,4 @@
-using aspapp.ApplicationUser;
+﻿using aspapp.ApplicationUser;
 using aspapp.ExtraTools;
 using aspapp.Models;
 using aspapp.Validator;
@@ -10,20 +10,15 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.EntityFrameworkCore;
-using Serilog;
 using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//Log.Logger = new LoggerConfiguration()
-//    .WriteTo.File("Logs/log.txt", rollingInterval: RollingInterval.Day)
-//    .CreateLogger();
-
-//builder.Host.UseSerilog();
-
+// --- KONFIGURACJA BAZY DANYCH ---
 builder.Services.AddDbContext<TripContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// --- LOKALIZACJA I WIDOKI ---
 builder.Services.AddControllersWithViews()
     .AddViewLocalization(LanguageViewLocationExpanderFormat.Suffix);
 
@@ -40,34 +35,57 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
         new CultureInfo("pl-PL"),
     };
     options.DefaultRequestCulture = new RequestCulture("pl-PL");
+    options.SupportedCultures = supportedcultures;
     options.SupportedUICultures = supportedcultures;
 });
 
+// --- FLUENT VALIDATION ---
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddFluentValidationClientsideAdapters();
 
+// --- AUTOMAPPER ---
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
+// --- RAZOR PAGES ---
 builder.Services.AddRazorPages();
 
-builder.Services.Configure<IdentityOptions>(options =>
+// --- IDENTITY ---
+builder.Services.AddIdentity<ApplicationUse, IdentityRole>(options =>
 {
-    // Lockout settings.
-    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(1);
-    options.Lockout.MaxFailedAccessAttempts = 10;
+    // 🔐 Ustawienia hasła (możesz dostosować)
+    options.Password.RequireDigit = false;
+    options.Password.RequireLowercase = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequiredLength = 4;
+
+    // 🔒 Lockout (blokada)
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+    options.Lockout.MaxFailedAccessAttempts = 5;
     options.Lockout.AllowedForNewUsers = true;
 
-    // User settings.
-    options.User.AllowedUserNameCharacters =
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
+    // 👤 Ustawienia użytkownika
+    options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
     options.User.RequireUniqueEmail = false;
-});
 
+    // 🔑 Nie wymaga potwierdzenia konta
+    options.SignIn.RequireConfirmedAccount = false;
+})
+.AddEntityFrameworkStores<TripContext>()
+.AddDefaultTokenProviders()
+.AddDefaultUI();
+
+// --- WALIDATOR HASŁA DYNAMICZNY ---
+builder.Services.AddTransient<IPasswordValidator<ApplicationUse>, DynamicPasswordValidator<ApplicationUse>>();
+
+// --- FAKE EMAIL SENDER ---
+builder.Services.AddTransient<IEmailSender, NullEmailSender>();
+
+// --- KONFIGURACJA COOKIE ---
 builder.Services.ConfigureApplicationCookie(options =>
 {
-    // Cookie settings
     options.Cookie.HttpOnly = true;
-    options.ExpireTimeSpan = TimeSpan.FromMinutes(5);
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
 
     options.LoginPath = "/Identity/Account/Login";
     options.AccessDeniedPath = "/Identity/Account/AccessDenied";
@@ -75,58 +93,46 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.SlidingExpiration = true;
 });
 
-builder.Services.AddIdentity<aspapp.ApplicationUser.ApplicationUse, IdentityRole>(options =>
-{
-    options.SignIn.RequireConfirmedAccount = false;
-})
-.AddEntityFrameworkStores<TripContext>()
-.AddDefaultTokenProviders()
-.AddDefaultUI();
-
-builder.Services.AddTransient<IPasswordValidator<ApplicationUse>, DynamicPasswordValidator<ApplicationUse>>();
-
-builder.Services.AddTransient<IEmailSender, NullEmailSender>();
-
 var app = builder.Build();
 
+// --- USTAWIENIA REQUEST LOCALIZATION ---
+app.UseRequestLocalization();
+
+// --- INICJALIZACJA BAZY (SecuritySettings + Role) ---
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var context = services.GetRequiredService<TripContext>();
+    context.Database.Migrate();
 
-    // Sprawdzenie, czy w tabeli SecuritySettings jest ju� rekord
+    // Dodanie domyślnych SecuritySettings, jeśli nie istnieją
     if (!context.SecuritySettings.Any())
     {
         context.SecuritySettings.Add(new SecuritySettings
         {
-            RequiredLength = 12,
-            RequireDigit = true,
+            RequiredLength = 4,
+            RequireDigit = false,
             RequireUppercase = false,
-            RequireNonAlphanumeric = true,
+            RequireNonAlphanumeric = false,
             RequireLowercase = false
         });
-
         context.SaveChanges();
     }
-}
 
-app.UseRequestLocalization();
-
-using (var scope = app.Services.CreateScope())
-{
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    var roleNames = new[] { "ADMIN",  "User" };
+    // Dodanie ról (ADMIN, User)
+    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+    string[] roleNames = { "ADMIN", "User" };
 
     foreach (var roleName in roleNames)
     {
-        var roleExist = await roleManager.RoleExistsAsync(roleName);
-        if (!roleExist)
+        if (!await roleManager.RoleExistsAsync(roleName))
         {
             await roleManager.CreateAsync(new IdentityRole(roleName));
         }
     }
 }
 
+// --- ŚRODOWISKO ---
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -137,11 +143,15 @@ else
     app.UseHsts();
 }
 
+// --- PIPELINE ---
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
 app.UseRouting();
+
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapRazorPages();
 
 app.MapControllerRoute(

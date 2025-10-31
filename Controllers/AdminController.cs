@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace aspapp.Controllers
 {
@@ -11,13 +12,16 @@ namespace aspapp.Controllers
     [Route("admin")]
     public class AdminController : Controller
     {
-
+        private readonly SignInManager<aspapp.ApplicationUser.ApplicationUse> _signInManager;
         private readonly UserManager<aspapp.ApplicationUser.ApplicationUse> _userManager;
         string[] roleNames = { "ADMIN", "User" };
 
-        public AdminController(  UserManager<aspapp.ApplicationUser.ApplicationUse> userManager)
+        public AdminController(  UserManager<aspapp.ApplicationUser.ApplicationUse> userManager, 
+            
+            SignInManager<ApplicationUser.ApplicationUse> signInManager)
         {
             _userManager = userManager;
+            _signInManager = signInManager;
         }
 
         [Authorize(Roles = "ADMIN")]
@@ -64,12 +68,16 @@ namespace aspapp.Controllers
         public async Task<IActionResult> CreateUser(CreateUser model)
         {
             if (!ModelState.IsValid)
-                return View();
+            {
+                foreach (var e in ModelState.Values.SelectMany(v => v.Errors))
+                    Console.WriteLine($"❌ {e.ErrorMessage}");
+            }
 
             var targetUser = await _userManager.FindByEmailAsync(model.Email);
+
             if (targetUser != null)
             {
-                ModelState.AddModelError(string.Empty, "Użytkownik o podanym adresie e-mail nie istnieje.");
+                ModelState.AddModelError(string.Empty, "Użytkownik o podanym adresie e-mail już istnieje.");
                 return View(model);
             }
 
@@ -82,12 +90,21 @@ namespace aspapp.Controllers
             var identityUser = new aspapp.ApplicationUser.ApplicationUse
             {
                 UserName = model.Email,
-                Email = model.Email,
-                LockoutEnabled = true,
-                MustChangePassword = true 
+                Email = model.Email 
             };
 
             var result = await _userManager.CreateAsync(identityUser, model.Password);
+
+
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                {
+                    Console.WriteLine($"[Identity] {error.Code}: {error.Description}");
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+
+            }
 
             if (result.Succeeded)
             {
@@ -99,8 +116,7 @@ namespace aspapp.Controllers
             {
                 ModelState.AddModelError(string.Empty, error.Description);
             }
-            return View("Index");
-            //return View(model);
+            return View(model);
         }
 
         [Authorize(Roles = "ADMIN")]
@@ -147,9 +163,11 @@ namespace aspapp.Controllers
             }
 
             // Opcjonalnie: komunikat o sukcesie
-            ViewBag.Message = "Hasło zostało pomyślnie zmienione.";
 
-            return View("Index");
+            await _signInManager.RefreshSignInAsync(user);
+
+            TempData["Message"] = "Hasło zostało pomyślnie zmienione.";
+            return RedirectToAction("Index");
         }
 
         [Authorize(Roles = "ADMIN")]
@@ -238,6 +256,20 @@ namespace aspapp.Controllers
 
             ViewBag.Message = $"Użytkownik {targetUser.Email} został zablokowany na {daysToBlock} dni.";
 
+            var isLocked = await _userManager.IsLockedOutAsync(targetUser);
+
+            if (isLocked)
+            {
+                var lockoutEnd = await _userManager.GetLockoutEndDateAsync(targetUser);
+                return Content($"Użytkownik jest zablokowany do: {lockoutEnd?.LocalDateTime}");
+                ViewBag.Message = $"Użytkownik jest zablokowany do: {lockoutEnd?.LocalDateTime}";
+            }
+            else
+            {
+                return Content("Użytkownik NIE jest zablokowany.");
+                ViewBag.Message = "Użytkownik NIE jest zablokowany.";
+            }
+
             return View(model);
         }
 
@@ -251,13 +283,8 @@ namespace aspapp.Controllers
         [Authorize(Roles = "ADMIN")]
         [HttpPost("DeleteAccount")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteAccount(string email)
+        public async Task<IActionResult> DeleteAccount(DeleteAccount model)
         {
-            if (string.IsNullOrWhiteSpace(email))
-            {
-                ModelState.AddModelError(string.Empty, "Adres e-mail jest wymagany.");
-                return View();
-            }
 
             // Pobierz aktualnie zalogowanego admina (tylko dla walidacji)
             var admin = await _userManager.GetUserAsync(User);
@@ -265,10 +292,10 @@ namespace aspapp.Controllers
                 return NotFound("Zalogowany administrator nie został znaleziony.");
 
             // Znajdź użytkownika po e-mailu
-            var targetUser = await _userManager.FindByEmailAsync(email);
+            var targetUser = await _userManager.FindByEmailAsync(model.email);
             if (targetUser == null)
             {
-                ModelState.AddModelError(string.Empty, $"Użytkownik o adresie {email} nie istnieje.");
+                ModelState.AddModelError(string.Empty, $"Użytkownik o adresie {model.email} nie istnieje.");
                 return View();
             }
 
@@ -281,16 +308,30 @@ namespace aspapp.Controllers
 
             // Usuń użytkownika
             var result = await _userManager.DeleteAsync(targetUser);
+
             if (!result.Succeeded)
             {
                 foreach (var error in result.Errors)
+                {
+                    Console.WriteLine($"[Identity] {error.Code}: {error.Description}");
                     ModelState.AddModelError(string.Empty, error.Description);
+                }
 
-                return View();
+            }
+
+            if (result.Succeeded)
+            {
+                TempData["Message"] = "Użytkownik został usuniety.";
+                return RedirectToAction(nameof(Index));
+            }
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
             }
 
             ViewBag.Message = $"Użytkownik {targetUser.Email} został pomyślnie usunięty.";
-            return View();
+
+            return View(model);
         }
 
     }

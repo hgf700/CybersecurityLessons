@@ -51,7 +51,8 @@
 
                         <form asp-action="DeleteAccount" asp-controller="Admin" method="post" class="d-inline">
                             @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@user.Id" />
+                            <input type="hidden" name="AccountId" value="@user.Id" />
+                            <input type="hidden" name="email" value="@user.Email" />
 
                             <button type="submit" class="btn btn-danger btn-sm"
                                     onclick="return confirm('Czy na pewno chcesz usunąć tego użytkownika?');">

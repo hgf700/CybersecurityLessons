@@ -9,10 +9,7 @@
     <form asp-action="DeleteAccount" method="post">
         @Html.AntiForgeryToken()
 
-        <div class="mb-3">
-            <label for="email" class="form-label">E-mail użytkownika do usunięcia</label>
-            <input name="email" id="email" class="form-control" required />
-        </div>
+
 
         <button type="submit" class="btn btn-danger">Usuń użytkownika</button>
         <a href="@Url.Action("Index")" class="btn btn-secondary">Powrót</a>
