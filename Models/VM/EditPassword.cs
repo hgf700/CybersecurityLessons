@@ -6,14 +6,14 @@ namespace aspapp.Models.VM
     {
         [Required]
         [DataType(DataType.Password)]
-        public string OldPassword;
+        public string OldPassword { get; set; }
 
         [Required]
         [DataType(DataType.Password)]
-        public string NewPassword;
+        public string NewPassword { get; set; }
 
         [Required]
         [DataType(DataType.Password)]
-        public string ConfirmPassword;
+        public string ConfirmPassword { get; set; }
     }
 }

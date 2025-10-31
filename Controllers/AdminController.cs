@@ -13,18 +13,11 @@ namespace aspapp.Controllers
     {
 
         private readonly UserManager<aspapp.ApplicationUser.ApplicationUse> _userManager;
-        private readonly IUserStore<aspapp.ApplicationUser.ApplicationUse> _userStore;
-        private readonly IUserEmailStore<aspapp.ApplicationUser.ApplicationUse> _emailStore;
         string[] roleNames = { "ADMIN", "User" };
 
-        public AdminController(  UserManager<aspapp.ApplicationUser.ApplicationUse> userManager,
-            IUserStore<aspapp.ApplicationUser.ApplicationUse> userStore,
-            IUserEmailStore<aspapp.ApplicationUser.ApplicationUse> emailStore)
+        public AdminController(  UserManager<aspapp.ApplicationUser.ApplicationUse> userManager)
         {
             _userManager = userManager;
-            _userStore= userStore;
-            _emailStore = emailStore;
-
         }
 
         [Authorize(Roles = "ADMIN")]
@@ -56,11 +49,6 @@ namespace aspapp.Controllers
             }
 
             return View(userList);
-
-            if (allUsers == null || !allUsers.Any())
-                return NotFound("Brak użytkowników w systemie.");
-
-            return View(allUsers);
         }
 
         [Authorize(Roles = "ADMIN")]
@@ -161,7 +149,7 @@ namespace aspapp.Controllers
             // Opcjonalnie: komunikat o sukcesie
             ViewBag.Message = "Hasło zostało pomyślnie zmienione.";
 
-            return View(Index);
+            return View("Index");
         }
 
         [Authorize(Roles = "ADMIN")]
