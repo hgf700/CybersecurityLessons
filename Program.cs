@@ -22,10 +22,7 @@ builder.Services.AddDbContext<TripContext>(options =>
 builder.Services.AddControllersWithViews()
     .AddViewLocalization(LanguageViewLocationExpanderFormat.Suffix);
 
-builder.Services.AddLocalization(options =>
-{
-    options.ResourcesPath = "Resources";
-});
+builder.Services.AddLocalization(options => { options.ResourcesPath = "Resources"; });
 
 builder.Services.Configure<RequestLocalizationOptions>(options =>
 {
@@ -50,37 +47,10 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddRazorPages();
 
 // --- IDENTITY ---
-builder.Services.AddIdentity<ApplicationUse, IdentityRole>(options =>
-{
-    // 🔐 Ustawienia hasła (możesz dostosować)
-    options.Password.RequireDigit = true;
-    options.Password.RequireLowercase = false;
-    options.Password.RequireUppercase = false;
-    options.Password.RequireNonAlphanumeric = true;
-    options.Password.RequiredLength = 12;
-
-    //options.Password.RequireDigit = false;
-    //options.Password.RequireLowercase = false;
-    //options.Password.RequireUppercase = false;
-    //options.Password.RequireNonAlphanumeric = false;
-    //options.Password.RequiredLength = 4;
-
-    // 🔒 Lockout (blokada)
-    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
-    options.Lockout.MaxFailedAccessAttempts = 5;
-    options.Lockout.AllowedForNewUsers = true;
- 
-
-    // 👤 Ustawienia użytkownika
-    options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
-    options.User.RequireUniqueEmail = false;
-
-    // 🔑 Nie wymaga potwierdzenia konta
-    options.SignIn.RequireConfirmedAccount = false;
-})
-.AddEntityFrameworkStores<TripContext>()
-.AddDefaultTokenProviders()
-.AddDefaultUI();
+builder.Services.AddIdentity<ApplicationUse, IdentityRole>()
+    .AddEntityFrameworkStores<TripContext>()
+    .AddDefaultTokenProviders()
+    .AddDefaultUI();
 
 // --- WALIDATOR HASŁA DYNAMICZNY ---
 builder.Services.AddTransient<IPasswordValidator<ApplicationUse>, DynamicPasswordValidator<ApplicationUse>>();
@@ -93,7 +63,6 @@ builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.HttpOnly = true;
     options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
-
     options.LoginPath = "/Identity/Account/Login";
     options.AccessDeniedPath = "/Identity/Account/AccessDenied";
     options.LogoutPath = "/Identity/Account/Logout";
@@ -103,7 +72,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 var app = builder.Build();
 
-// --- USTAWIENIA REQUEST LOCALIZATION ---
+// --- LOKALIZACJA ---
 app.UseRequestLocalization();
 
 // --- INICJALIZACJA BAZY (SecuritySettings + Role) ---
@@ -113,25 +82,26 @@ using (var scope = app.Services.CreateScope())
     var context = services.GetRequiredService<TripContext>();
     context.Database.Migrate();
 
-    // Dodanie domyślnych SecuritySettings, jeśli nie istnieją
+    // 🔒 Domyślna polityka haseł, jeśli nie istnieje
     if (!context.SecuritySettings.Any())
     {
         context.SecuritySettings.Add(new SecuritySettings
         {
-            RequiredLength = 4,
-            RequireDigit = false,
+            RequiredLength = 12,
+            RequireDigit = true,
             RequireUppercase = false,
-            RequireNonAlphanumeric = false,
-            RequireLowercase = false
+            RequireLowercase = false,
+            RequireNonAlphanumeric = true,
+            PasswordValidity = 30
         });
         context.SaveChanges();
     }
 
-    // Dodanie ról (ADMIN, User)
+    // 🧩 Role systemowe
     var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-    string[] roleNames = { "ADMIN", "User" };
+    string[] roles = { "ADMIN", "User" };
 
-    foreach (var roleName in roleNames)
+    foreach (var roleName in roles)
     {
         if (!await roleManager.RoleExistsAsync(roleName))
         {
@@ -140,7 +110,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// --- ŚRODOWISKO ---
+// --- PIPELINE ---
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -151,12 +121,9 @@ else
     app.UseHsts();
 }
 
-// --- PIPELINE ---
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
 app.UseAuthentication();
 app.UseAuthorization();
 
