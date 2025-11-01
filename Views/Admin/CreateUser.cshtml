@@ -28,6 +28,8 @@
             <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
         </div>
 
+        <div asp-validation-summary="All" class="text-danger"></div>
+
         <button type="submit" class="btn btn-primary">Utwórz</button>
         <a href="@Url.Action("Index")" class="btn btn-secondary">Powrót</a>
     </form>

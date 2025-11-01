@@ -3,6 +3,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
+using System.Text;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
@@ -14,14 +18,15 @@ namespace aspapp.Controllers
     {
         private readonly SignInManager<aspapp.ApplicationUser.ApplicationUse> _signInManager;
         private readonly UserManager<aspapp.ApplicationUser.ApplicationUse> _userManager;
+        private readonly IEmailSender _emailSender;
         string[] roleNames = { "ADMIN", "User" };
-
         public AdminController(  UserManager<aspapp.ApplicationUser.ApplicationUse> userManager, 
-            
-            SignInManager<ApplicationUser.ApplicationUse> signInManager)
+            SignInManager<ApplicationUser.ApplicationUse> signInManager,
+            IEmailSender emailSender)
         {
             _userManager = userManager;
             _signInManager = signInManager;
+            _emailSender = emailSender;
         }
 
         [Authorize(Roles = "ADMIN")]
@@ -95,6 +100,8 @@ namespace aspapp.Controllers
 
             var result = await _userManager.CreateAsync(identityUser, model.Password);
 
+            await _userManager.SetLockoutEndDateAsync(identityUser, null);
+            await _userManager.ResetAccessFailedCountAsync(identityUser);
 
             if (!result.Succeeded)
             {
@@ -110,12 +117,36 @@ namespace aspapp.Controllers
             {
                 await _userManager.AddToRoleAsync(identityUser, "User");
                 TempData["Message"] = "Użytkownik został utworzony.";
-                return RedirectToAction(nameof(Index));
+
+                var user = await _userManager.FindByEmailAsync(model.Email);
+                string returnUrl = Url.Content("~/admin"); // strona główna
+                var userId = await _userManager.GetUserIdAsync(user);
+                var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+                var callbackUrl = Url.Page(
+                    "/Account/ConfirmEmail",
+                    pageHandler: null,
+                    values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
+                    protocol: Request.Scheme);
+
+                await _emailSender.SendEmailAsync(model.Email, "Confirm your email",
+                    $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+
+                if (_userManager.Options.SignIn.RequireConfirmedAccount)
+                {
+                    return RedirectToPage("RegisterConfirmation", new { email = model.Email, returnUrl = returnUrl });
+                }
+                else
+                {
+                    //await _signInManager.SignInAsync(user, isPersistent: false);
+                    return LocalRedirect(returnUrl);
+                }
             }
             foreach (var error in result.Errors)
             {
                 ModelState.AddModelError(string.Empty, error.Description);
             }
+
             return View(model);
         }
 

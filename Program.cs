@@ -53,16 +53,23 @@ builder.Services.AddRazorPages();
 builder.Services.AddIdentity<ApplicationUse, IdentityRole>(options =>
 {
     // 🔐 Ustawienia hasła (możesz dostosować)
-    options.Password.RequireDigit = false;
+    options.Password.RequireDigit = true;
     options.Password.RequireLowercase = false;
     options.Password.RequireUppercase = false;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequiredLength = 4;
+    options.Password.RequireNonAlphanumeric = true;
+    options.Password.RequiredLength = 12;
+
+    //options.Password.RequireDigit = false;
+    //options.Password.RequireLowercase = false;
+    //options.Password.RequireUppercase = false;
+    //options.Password.RequireNonAlphanumeric = false;
+    //options.Password.RequiredLength = 4;
 
     // 🔒 Lockout (blokada)
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
     options.Lockout.MaxFailedAccessAttempts = 5;
     options.Lockout.AllowedForNewUsers = true;
+ 
 
     // 👤 Ustawienia użytkownika
     options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
@@ -91,6 +98,7 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.AccessDeniedPath = "/Identity/Account/AccessDenied";
     options.LogoutPath = "/Identity/Account/Logout";
     options.SlidingExpiration = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
 });
 
 var app = builder.Build();

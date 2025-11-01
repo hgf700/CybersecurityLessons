@@ -10,12 +10,14 @@ namespace aspapp.Controllers
     public class UserController : Controller
     {
         private readonly UserManager<aspapp.ApplicationUser.ApplicationUse> _userManager;
+        private readonly SignInManager<aspapp.ApplicationUser.ApplicationUse> _signInManager;
         string[] roleNames = { "ADMIN", "User" };
 
-        public UserController(  UserManager<aspapp.ApplicationUser.ApplicationUse> userManager)
+        public UserController(  UserManager<aspapp.ApplicationUser.ApplicationUse> userManager,
+            SignInManager<ApplicationUser.ApplicationUse> signInManager)
         {
             _userManager = userManager;
-
+            _signInManager = signInManager;
         }
 
         [Authorize(Roles = "User")]
@@ -66,7 +68,10 @@ namespace aspapp.Controllers
             // Opcjonalnie: komunikat o sukcesie
             ViewBag.Message = "Hasło zostało pomyślnie zmienione.";
 
-            return View(model);
+            await _signInManager.RefreshSignInAsync(user);
+
+            return View("Index");
+            //return View(model);
         }
 
     }
