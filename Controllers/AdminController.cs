@@ -115,13 +115,14 @@ namespace aspapp.Controllers
                     Console.WriteLine($"[Identity] {error.Code}: {error.Description}");
                     ModelState.AddModelError(string.Empty, error.Description);
                 }
-
             }
 
             if (result.Succeeded)
             {
                 await _userManager.AddToRoleAsync(identityUser, "User");
                 TempData["Message"] = "Użytkownik został utworzony.";
+
+                
 
                 var user = await _userManager.FindByEmailAsync(model.Email);
                 string returnUrl = Url.Content("~/admin"); // strona główna

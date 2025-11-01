@@ -2,18 +2,20 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
+using aspapp.Models;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Extensions.Logging;
 
 namespace aspapp.Areas.Identity.Pages.Account
 {
@@ -21,11 +23,16 @@ namespace aspapp.Areas.Identity.Pages.Account
     {
         private readonly SignInManager<aspapp.ApplicationUser.ApplicationUse> _signInManager;
         private readonly ILogger<LoginModel> _logger;
+        private readonly TripContext _tripContext;
+        private readonly UserManager<aspapp.ApplicationUser.ApplicationUse> _userManager;
 
-        public LoginModel(SignInManager<aspapp.ApplicationUser.ApplicationUse> signInManager, ILogger<LoginModel> logger)
+        public LoginModel(SignInManager<aspapp.ApplicationUser.ApplicationUse> signInManager, ILogger<LoginModel> logger, TripContext tripContext,
+            UserManager<aspapp.ApplicationUser.ApplicationUse> userManager)
         {
             _signInManager = signInManager;
             _logger = logger;
+            _tripContext = tripContext;
+            _userManager = userManager;
         }
 
         /// <summary>
@@ -111,6 +118,23 @@ namespace aspapp.Areas.Identity.Pages.Account
             {
                 // This doesn't count login failures towards account lockout
                 // To enable password failures to trigger account lockout, set lockoutOnFailure: true
+
+                var targetUser = await _userManager.FindByEmailAsync(Input.Email);
+                if (targetUser == null)
+                    return NotFound("Użytkownik nie został znaleziony.");
+
+                var settings = await _tripContext.SecuritySettings.FirstOrDefaultAsync();
+                if (settings == null)
+                    return StatusCode(500, "Brak ustawień polityki bezpieczeństwa w bazie danych.");
+
+                if (targetUser.PasswordExpirationDate.HasValue && targetUser.PasswordExpirationDate < DateTime.UtcNow)
+                {
+                    TempData["ExpiredMessage"] = "Twoje hasło wygasło. Ustaw nowe, zanim się zalogujesz.";
+
+                    return RedirectToAction("ResetPassword", "Account", new { email = Input.Email });
+                }
+
+
                 var result = await _signInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
                 if (result.Succeeded)
                 {
@@ -131,6 +155,8 @@ namespace aspapp.Areas.Identity.Pages.Account
                     ModelState.AddModelError(string.Empty, "Login lub Hasło niepoprawny");
                     return Page();
                 }
+
+                
             }
 
             // If we got this far, something failed, redisplay form

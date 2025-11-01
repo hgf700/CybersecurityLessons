@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using aspapp.ApplicationUser;
+using aspapp.Models.VM;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using aspapp.ApplicationUser;
 
 namespace aspapp.Models
 {
@@ -10,6 +11,8 @@ namespace aspapp.Models
         public TripContext(DbContextOptions<TripContext> options) : base(options) { }
 
         public DbSet<SecuritySettings> SecuritySettings { get; set; }
+        public DbSet<PasswordHistory> PasswordHistories { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

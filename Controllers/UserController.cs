@@ -4,6 +4,7 @@ using aspapp.Models.VM;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace aspapp.Controllers
 {
@@ -11,13 +12,16 @@ namespace aspapp.Controllers
     {
         private readonly UserManager<aspapp.ApplicationUser.ApplicationUse> _userManager;
         private readonly SignInManager<aspapp.ApplicationUser.ApplicationUse> _signInManager;
+        private readonly TripContext _tripContext;
         string[] roleNames = { "ADMIN", "User" };
 
         public UserController(  UserManager<aspapp.ApplicationUser.ApplicationUse> userManager,
-            SignInManager<ApplicationUser.ApplicationUse> signInManager)
+            SignInManager<ApplicationUser.ApplicationUse> signInManager,
+            TripContext tripContext)
         {
             _userManager = userManager;
             _signInManager = signInManager;
+            _tripContext = tripContext;
         }
 
         [Authorize(Roles = "User")]
@@ -64,6 +68,21 @@ namespace aspapp.Controllers
 
                 return View(model);
             }
+
+            user.LastPasswordChangeDate = DateTime.UtcNow;
+
+            var settings = await _tripContext.SecuritySettings.FirstOrDefaultAsync();
+            if (settings != null)
+                user.PasswordExpirationDate = DateTime.UtcNow.AddMinutes(1);
+
+            await _tripContext.PasswordHistories.AddAsync(new PasswordHistory
+            {
+                UserId = user.Id,
+                PasswordHash = user.PasswordHash
+            });
+
+            await _tripContext.SaveChangesAsync();
+
 
             // Opcjonalnie: komunikat o sukcesie
             ViewBag.Message = "Hasło zostało pomyślnie zmienione.";
