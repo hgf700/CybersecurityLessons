@@ -1,11 +1,13 @@
-﻿using aspapp.Models.VM;
+﻿using aspapp.Models;
+using aspapp.Models.VM;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.EntityFrameworkCore;
 using System.Text;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -19,14 +21,17 @@ namespace aspapp.Controllers
         private readonly SignInManager<aspapp.ApplicationUser.ApplicationUse> _signInManager;
         private readonly UserManager<aspapp.ApplicationUser.ApplicationUse> _userManager;
         private readonly IEmailSender _emailSender;
+        private readonly TripContext _context;
         string[] roleNames = { "ADMIN", "User" };
         public AdminController(  UserManager<aspapp.ApplicationUser.ApplicationUse> userManager, 
             SignInManager<ApplicationUser.ApplicationUse> signInManager,
-            IEmailSender emailSender)
+            IEmailSender emailSender,
+            TripContext context)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _emailSender = emailSender;
+            _context = context;
         }
 
         [Authorize(Roles = "ADMIN")]
@@ -364,6 +369,74 @@ namespace aspapp.Controllers
 
             return View(model);
         }
+
+        [Authorize(Roles = "ADMIN")]
+        [HttpGet("PasswordRequirments")]
+        public async Task<IActionResult> PasswordRequirments()
+        {
+            return View();
+        }
+
+        [Authorize(Roles = "ADMIN")]
+        [HttpPost("PasswordRequirments")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PasswordRequirments(SecuritySettings model)
+        {
+            if (!ModelState.IsValid)
+            {
+                foreach (var e in ModelState.Values.SelectMany(v => v.Errors))
+                    Console.WriteLine($"❌ {e.ErrorMessage}");
+                return View(model);
+            }
+
+            var admin = await _userManager.GetUserAsync(User);
+            if (admin == null)
+                return NotFound("Zalogowany administrator nie został znaleziony.");
+
+            // 🔍 Sprawdź, czy już istnieje rekord polityki
+            var existingPolicy = await _context.SecuritySettings.FirstOrDefaultAsync();
+
+            if (existingPolicy != null)
+            {
+                // 🔁 Nadpisz istniejącą politykę
+                existingPolicy.RequiredLength = model.RequiredLength;
+                existingPolicy.RequireDigit = model.RequireDigit;
+                existingPolicy.RequireUppercase = model.RequireUppercase;
+                existingPolicy.RequireLowercase = model.RequireLowercase;
+                existingPolicy.RequireNonAlphanumeric = model.RequireNonAlphanumeric;
+                existingPolicy.PasswordValidity = model.PasswordValidity;
+
+                _context.SecuritySettings.Update(existingPolicy);
+            }
+            else
+            {
+                // 🆕 Utwórz nową politykę (np. o Id = 1)
+                var policy = new SecuritySettings
+                {
+                    Id = 1,
+                    RequiredLength = model.RequiredLength,
+                    RequireDigit = model.RequireDigit,
+                    RequireUppercase = model.RequireUppercase,
+                    RequireLowercase = model.RequireLowercase,
+                    RequireNonAlphanumeric = model.RequireNonAlphanumeric,
+                    PasswordValidity = model.PasswordValidity
+                };
+
+                await _context.SecuritySettings.AddAsync(policy);
+            }
+
+            var changes = await _context.SaveChangesAsync();
+
+            if (changes > 0)
+            {
+                TempData["Message"] = "✅ Polityka haseł została zapisana pomyślnie.";
+                return RedirectToAction(nameof(PasswordRequirments));
+            }
+
+            ModelState.AddModelError(string.Empty, "⚠️ Nie udało się zapisać zmian w bazie danych.");
+            return View(model);
+        }
+
 
     }
 }
