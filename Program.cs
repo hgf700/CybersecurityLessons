@@ -1,4 +1,6 @@
-﻿using aspapp.ApplicationUser;
+﻿using Serilog;
+using Serilog.Sinks.MSSqlServer;
+using aspapp.ApplicationUser;
 using aspapp.ExtraTools;
 using aspapp.Models;
 using aspapp.Validator;
@@ -10,15 +12,30 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System.Globalization;
 
+
 var builder = WebApplication.CreateBuilder(args);
+
+var DefaultConnection = "Server=LAPTOP-RNG4KAQI\\SQLEXPRESS01;Database=SecurityDB;Trusted_Connection=True;TrustServerCertificate=True";
 
 // --- KONFIGURACJA BAZY DANYCH ---
 builder.Services.AddDbContext<TripContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// --- LOKALIZACJA I WIDOKI ---
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.File("Logs/log.txt", rollingInterval: RollingInterval.Day)
+    .WriteTo.MSSqlServer(
+        connectionString: DefaultConnection,
+        sinkOptions: new MSSqlServerSinkOptions { 
+            TableName = "ApplicationLogs",
+            AutoCreateSqlTable = true
+        })
+    .CreateLogger();
+
+Log.Information("Aplikacja uruchomiona");
+
 builder.Services.AddControllersWithViews()
     .AddViewLocalization(LanguageViewLocationExpanderFormat.Suffix);
 

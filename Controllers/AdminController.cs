@@ -22,16 +22,20 @@ namespace aspapp.Controllers
         private readonly UserManager<aspapp.ApplicationUser.ApplicationUse> _userManager;
         private readonly IEmailSender _emailSender;
         private readonly TripContext _context;
+        private readonly ILogger _logger;
+
         string[] roleNames = { "ADMIN", "User" };
         public AdminController(  UserManager<aspapp.ApplicationUser.ApplicationUse> userManager, 
             SignInManager<ApplicationUser.ApplicationUse> signInManager,
             IEmailSender emailSender,
-            TripContext context)
+            TripContext context,
+            ILogger logger)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _emailSender = emailSender;
             _context = context;
+            _logger = logger;
         }
 
         [Authorize(Roles = "ADMIN")]
@@ -114,6 +118,11 @@ namespace aspapp.Controllers
                 {
                     Console.WriteLine($"[Identity] {error.Code}: {error.Description}");
                     ModelState.AddModelError(string.Empty, error.Description);
+                    _logger.LogInformation("Status: {Status}, Action: {Action}, Time: {Time}",
+                        "Failed",
+                        "CreateUser",
+                        DateTime.UtcNow);
+
                 }
             }
 
@@ -122,7 +131,12 @@ namespace aspapp.Controllers
                 await _userManager.AddToRoleAsync(identityUser, "User");
                 TempData["Message"] = "Użytkownik został utworzony.";
 
-                
+                //_logger.LogInformation($"Succes-{DateTime.UtcNow}-Admin tworzy użytkownika {targetUser}");
+                _logger.LogInformation("Status: {Status}, Action: {Action}, target {TargetUser} Time: {Time}",
+                    "Success",
+                    "CreateUser",
+                    targetUser,
+                    DateTime.UtcNow);
 
                 var user = await _userManager.FindByEmailAsync(model.Email);
                 string returnUrl = Url.Content("~/admin"); // strona główna
@@ -196,12 +210,23 @@ namespace aspapp.Controllers
                 foreach (var error in result.Errors)
                     ModelState.AddModelError(string.Empty, error.Description);
 
+                _logger.LogInformation("Status: {Status}, Action: {Action}, Time: {Time}",
+                    "Failed",
+                    "EditAdminPassword",
+                    DateTime.UtcNow);
+
                 return View(model);
             }
 
             // Opcjonalnie: komunikat o sukcesie
 
             await _signInManager.RefreshSignInAsync(user);
+
+            _logger.LogInformation("Status: {Status}, Action: {Action},target {TargetUser} Time: {Time}",
+                "Success",
+                "EditAdminPassword",
+                user.Email,
+                DateTime.UtcNow);
 
             TempData["Message"] = "Hasło zostało pomyślnie zmienione.";
             return RedirectToAction("Index");
@@ -244,8 +269,20 @@ namespace aspapp.Controllers
                 foreach (var error in updateResult.Errors)
                     ModelState.AddModelError(string.Empty, error.Description);
 
+                _logger.LogInformation("Status: {Status}, Action: {Action}, Time: {Time}",
+                "Failed",
+                "EditAdmin",
+                DateTime.UtcNow);
+
                 return View(model);
             }
+            _logger.LogInformation($"Admin {user.Email} edytuje nazwe uzytkownika");
+
+            _logger.LogInformation("Status: {Status}, Action: {Action},target {TargetUser} Time: {Time}",
+                "Success",
+                "EditAdmin",
+                user.Email,
+                DateTime.UtcNow);
 
             ViewBag.Message = "Dane administratora zostały pomyślnie zaktualizowane.";
             return View(model);
@@ -294,6 +331,8 @@ namespace aspapp.Controllers
             ViewBag.Message = $"Użytkownik {targetUser.Email} został zablokowany na {daysToBlock} dni.";
 
             var isLocked = await _userManager.IsLockedOutAsync(targetUser);
+
+            _logger.LogInformation($"Admin {admin.Email} blokuje {targetUser}");
 
             if (isLocked)
             {
@@ -366,6 +405,8 @@ namespace aspapp.Controllers
                 ModelState.AddModelError(string.Empty, error.Description);
             }
 
+            _logger.LogInformation($"Admin {admin.Email} usuwa konto {targetUser}");
+
             ViewBag.Message = $"Użytkownik {targetUser.Email} został pomyślnie usunięty.";
 
             return View(model);
@@ -432,6 +473,7 @@ namespace aspapp.Controllers
             {
                 TempData["Message"] = "✅ Polityka haseł została zapisana pomyślnie.";
                 return RedirectToAction(nameof(PasswordRequirments));
+
             }
 
             ModelState.AddModelError(string.Empty, "⚠️ Nie udało się zapisać zmian w bazie danych.");
