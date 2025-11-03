@@ -8,6 +8,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace aspapp.Controllers
 {
+    [Authorize(Roles = "User")]
+    [Route("user")]
     public class UserController : Controller
     {
         private readonly UserManager<aspapp.ApplicationUser.ApplicationUse> _userManager;
@@ -73,7 +75,7 @@ namespace aspapp.Controllers
 
             var settings = await _tripContext.SecuritySettings.FirstOrDefaultAsync();
             if (settings != null)
-                user.PasswordExpirationDate = DateTime.UtcNow.AddMinutes(1);
+                //user.PasswordExpirationDate = DateTime.UtcNow.AddMinutes(1);
 
             await _tripContext.PasswordHistories.AddAsync(new PasswordHistory
             {
