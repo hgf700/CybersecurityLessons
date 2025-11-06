@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Globalization;
+using Serilog.Events;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,14 +26,24 @@ builder.Services.AddDbContext<TripContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 Log.Logger = new LoggerConfiguration()
-    .WriteTo.File("Logs/log.txt", rollingInterval: RollingInterval.Day)
-    .WriteTo.MSSqlServer(
-        connectionString: DefaultConnection,
-        sinkOptions: new MSSqlServerSinkOptions { 
-            TableName = "ApplicationLogs",
-            AutoCreateSqlTable = true
-        })
+    .MinimumLevel.Information() // logi na poziomie Information i wyżej
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning) // ignoruje Info dla Microsoft.*
+    .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning) // EF Core info -> warning
+    .Enrich.FromLogContext()
+    .WriteTo.File(
+    "Logs/log.txt",
+    rollingInterval: RollingInterval.Day,
+    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}"
+    )
+    //.WriteTo.MSSqlServer(
+    //    connectionString: DefaultConnection,
+    //    sinkOptions: new MSSqlServerSinkOptions { 
+    //        TableName = "ApplicationLogs",
+    //        AutoCreateSqlTable = true
+    //    })
     .CreateLogger();
+
+builder.Host.UseSerilog();
 
 Log.Information("Aplikacja uruchomiona");
 

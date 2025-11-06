@@ -59,12 +59,7 @@ namespace aspapp.Controllers
             if (!passwordValid)
             {
                 ModelState.AddModelError(string.Empty, "Niepoprawne obecne hasło.");
-                _logger.LogInformation("Status: {Status}, Action: {Action}, target {TargetUser} Time: {Time}",
-                    "Failed",
-                    "EditPasswordUser",
-                    user?.Email ?? "unknown",
-                    DateTime.UtcNow);
-
+                _logger.LogInformation("{ActionStatus} for {User}", "EditPasswordUser failed", user?.Email ?? "unknown");
                 return View(model);
             }
 
@@ -74,39 +69,24 @@ namespace aspapp.Controllers
                 foreach (var error in result.Errors)
                     ModelState.AddModelError(string.Empty, error.Description);
 
-                _logger.LogInformation("Status: {Status}, Action: {Action}, target {TargetUser} Time: {Time}",
-                    "Failed",
-                    "EditPasswordUser",
-                    user.Email,
-                    DateTime.UtcNow);
-
+                _logger.LogInformation("{ActionStatus} for {User}", "EditPasswordUser failed", user.Email);
                 return View(model);
             }
 
             user.LastPasswordChangeDate = DateTime.UtcNow;
-
-            var settings = await _tripContext.SecuritySettings.FirstOrDefaultAsync();
-            if (settings != null)
-                ; //user.PasswordExpirationDate = DateTime.UtcNow.AddMinutes(1);
-
             await _tripContext.PasswordHistories.AddAsync(new PasswordHistory
             {
                 UserId = user.Id,
                 PasswordHash = user.PasswordHash
             });
-
             await _tripContext.SaveChangesAsync();
-
             await _signInManager.RefreshSignInAsync(user);
 
-            _logger.LogInformation("Status: {Status}, Action: {Action}, target {TargetUser} Time: {Time}",
-                "Success",
-                "EditPasswordUser",
-                user.Email,
-                DateTime.UtcNow);
+            _logger.LogInformation("{ActionStatus} for {User}", "EditPasswordUser succeeded", user.Email);
 
             ViewBag.Message = "Hasło zostało pomyślnie zmienione.";
             return View("Index");
         }
+
     }
 }
