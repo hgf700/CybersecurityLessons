@@ -1,5 +1,4 @@
 ﻿using aspapp.Models;
-using aspapp.Models;
 using aspapp.Models.VM;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -15,22 +14,26 @@ namespace aspapp.Controllers
         private readonly UserManager<aspapp.ApplicationUser.ApplicationUse> _userManager;
         private readonly SignInManager<aspapp.ApplicationUser.ApplicationUse> _signInManager;
         private readonly TripContext _tripContext;
+        private readonly ILogger<UserController> _logger;
+
         string[] roleNames = { "ADMIN", "User" };
 
-        public UserController(  UserManager<aspapp.ApplicationUser.ApplicationUse> userManager,
-            SignInManager<ApplicationUser.ApplicationUse> signInManager,
-            TripContext tripContext)
+        public UserController(UserManager<aspapp.ApplicationUser.ApplicationUse> userManager,
+                              SignInManager<ApplicationUser.ApplicationUse> signInManager,
+                              TripContext tripContext,
+                              ILogger<UserController> logger)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _tripContext = tripContext;
+            _logger = logger;
         }
 
         [Authorize(Roles = "User")]
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            return View(); 
+            return View();
         }
 
         [Authorize(Roles = "User")]
@@ -48,25 +51,34 @@ namespace aspapp.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            // Pobranie aktualnego użytkownika
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
                 return NotFound("Użytkownik nie został znaleziony.");
 
-            // Sprawdzenie poprawności aktualnego hasła
             var passwordValid = await _userManager.CheckPasswordAsync(user, model.OldPassword);
             if (!passwordValid)
             {
                 ModelState.AddModelError(string.Empty, "Niepoprawne obecne hasło.");
+                _logger.LogInformation("Status: {Status}, Action: {Action}, target {TargetUser} Time: {Time}",
+                    "Failed",
+                    "EditPasswordUser",
+                    user?.Email ?? "unknown",
+                    DateTime.UtcNow);
+
                 return View(model);
             }
 
-            // Próba zmiany hasła
             var result = await _userManager.ChangePasswordAsync(user, model.OldPassword, model.NewPassword);
             if (!result.Succeeded)
             {
                 foreach (var error in result.Errors)
                     ModelState.AddModelError(string.Empty, error.Description);
+
+                _logger.LogInformation("Status: {Status}, Action: {Action}, target {TargetUser} Time: {Time}",
+                    "Failed",
+                    "EditPasswordUser",
+                    user.Email,
+                    DateTime.UtcNow);
 
                 return View(model);
             }
@@ -75,7 +87,7 @@ namespace aspapp.Controllers
 
             var settings = await _tripContext.SecuritySettings.FirstOrDefaultAsync();
             if (settings != null)
-                //user.PasswordExpirationDate = DateTime.UtcNow.AddMinutes(1);
+                ; //user.PasswordExpirationDate = DateTime.UtcNow.AddMinutes(1);
 
             await _tripContext.PasswordHistories.AddAsync(new PasswordHistory
             {
@@ -85,15 +97,16 @@ namespace aspapp.Controllers
 
             await _tripContext.SaveChangesAsync();
 
-
-            // Opcjonalnie: komunikat o sukcesie
-            ViewBag.Message = "Hasło zostało pomyślnie zmienione.";
-
             await _signInManager.RefreshSignInAsync(user);
 
-            return View("Index");
-            //return View(model);
-        }
+            _logger.LogInformation("Status: {Status}, Action: {Action}, target {TargetUser} Time: {Time}",
+                "Success",
+                "EditPasswordUser",
+                user.Email,
+                DateTime.UtcNow);
 
+            ViewBag.Message = "Hasło zostało pomyślnie zmienione.";
+            return View("Index");
+        }
     }
 }

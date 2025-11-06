@@ -10,7 +10,6 @@ using Microsoft.EntityFrameworkCore;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace aspapp.Controllers
 {
@@ -22,14 +21,14 @@ namespace aspapp.Controllers
         private readonly UserManager<aspapp.ApplicationUser.ApplicationUse> _userManager;
         private readonly IEmailSender _emailSender;
         private readonly TripContext _context;
-        private readonly ILogger _logger;
+        private readonly ILogger<AdminController> _logger;
 
         string[] roleNames = { "ADMIN", "User" };
-        public AdminController(  UserManager<aspapp.ApplicationUser.ApplicationUse> userManager, 
-            SignInManager<ApplicationUser.ApplicationUse> signInManager,
-            IEmailSender emailSender,
-            TripContext context,
-            ILogger logger)
+        public AdminController(UserManager<aspapp.ApplicationUser.ApplicationUse> userManager,
+                               SignInManager<ApplicationUser.ApplicationUse> signInManager,
+                               IEmailSender emailSender,
+                               TripContext context,
+                               ILogger<AdminController> logger)
         {
             _userManager = userManager;
             _signInManager = signInManager;
@@ -42,16 +41,13 @@ namespace aspapp.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
                 return NotFound("Użytkownik nie został znaleziony.");
 
             ViewBag.Message = $"Zalogowano jako {user.Email}";
 
-            // Pobranie wszystkich użytkowników
             var userList = new List<UserWithRoleViewModel>();
-
             var allUsers = _userManager.Users.ToList();
 
             foreach (var u in allUsers)
@@ -71,10 +67,7 @@ namespace aspapp.Controllers
 
         [Authorize(Roles = "ADMIN")]
         [HttpGet("CreateUser")]
-        public async Task<IActionResult> CreateUser()
-        {
-            return View();
-        }
+        public async Task<IActionResult> CreateUser() => View();
 
         [Authorize(Roles = "ADMIN")]
         [HttpPost("CreateUser")]
@@ -104,7 +97,7 @@ namespace aspapp.Controllers
             var identityUser = new aspapp.ApplicationUser.ApplicationUse
             {
                 UserName = model.Email,
-                Email = model.Email 
+                Email = model.Email
             };
 
             var result = await _userManager.CreateAsync(identityUser, model.Password);
@@ -118,64 +111,47 @@ namespace aspapp.Controllers
                 {
                     Console.WriteLine($"[Identity] {error.Code}: {error.Description}");
                     ModelState.AddModelError(string.Empty, error.Description);
-                    _logger.LogInformation("Status: {Status}, Action: {Action}, Time: {Time}",
-                        "Failed",
-                        "CreateUser",
-                        DateTime.UtcNow);
-
                 }
-            }
 
-            if (result.Succeeded)
-            {
-                await _userManager.AddToRoleAsync(identityUser, "User");
-                TempData["Message"] = "Użytkownik został utworzony.";
-
-                //_logger.LogInformation($"Succes-{DateTime.UtcNow}-Admin tworzy użytkownika {targetUser}");
-                _logger.LogInformation("Status: {Status}, Action: {Action}, target {TargetUser} Time: {Time}",
-                    "Success",
+                _logger.LogInformation("Status: {Status}, Action: {Action}, Time: {Time}",
+                    "Failed",
                     "CreateUser",
-                    targetUser,
                     DateTime.UtcNow);
 
-                var user = await _userManager.FindByEmailAsync(model.Email);
-                string returnUrl = Url.Content("~/admin"); // strona główna
-                var userId = await _userManager.GetUserIdAsync(user);
-                var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-                var callbackUrl = Url.Page(
-                    "/Account/ConfirmEmail",
-                    pageHandler: null,
-                    values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
-                    protocol: Request.Scheme);
-
-                await _emailSender.SendEmailAsync(model.Email, "Confirm your email",
-                    $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
-
-                if (_userManager.Options.SignIn.RequireConfirmedAccount)
-                {
-                    return RedirectToPage("RegisterConfirmation", new { email = model.Email, returnUrl = returnUrl });
-                }
-                else
-                {
-                    //await _signInManager.SignInAsync(user, isPersistent: false);
-                    return LocalRedirect(returnUrl);
-                }
-            }
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError(string.Empty, error.Description);
+                return View(model);
             }
 
-            return View(model);
+            await _userManager.AddToRoleAsync(identityUser, "User");
+            TempData["Message"] = "Użytkownik został utworzony.";
+
+            _logger.LogInformation("Status: {Status}, Action: {Action}, target {TargetUser} Time: {Time}",
+                "Success",
+                "CreateUser",
+                identityUser.Email,
+                DateTime.UtcNow);
+
+            string returnUrl = Url.Content("~/admin");
+            var userId = await _userManager.GetUserIdAsync(identityUser);
+            var code = await _userManager.GenerateEmailConfirmationTokenAsync(identityUser);
+            code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+            var callbackUrl = Url.Page(
+                "/Account/ConfirmEmail",
+                pageHandler: null,
+                values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
+                protocol: Request.Scheme);
+
+            await _emailSender.SendEmailAsync(model.Email, "Confirm your email",
+                $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+
+            if (_userManager.Options.SignIn.RequireConfirmedAccount)
+                return RedirectToPage("RegisterConfirmation", new { email = model.Email, returnUrl = returnUrl });
+            else
+                return LocalRedirect(returnUrl);
         }
 
         [Authorize(Roles = "ADMIN")]
         [HttpGet("EditAdminPassword")]
-        public async Task<IActionResult> EditAdminPassword()
-        {
-            return View();
-        }
+        public async Task<IActionResult> EditAdminPassword() => View();
 
         [Authorize(Roles = "ADMIN")]
         [HttpPost("EditAdminPassword")]
@@ -185,12 +161,10 @@ namespace aspapp.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            // Pobranie aktualnego użytkownika
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
                 return NotFound("Użytkownik nie został znaleziony.");
 
-            // Sprawdzenie poprawności aktualnego hasła
             var passwordValid = await _userManager.CheckPasswordAsync(user, model.OldPassword);
             if (!passwordValid)
             {
@@ -218,11 +192,9 @@ namespace aspapp.Controllers
                 return View(model);
             }
 
-            // Opcjonalnie: komunikat o sukcesie
-
             await _signInManager.RefreshSignInAsync(user);
 
-            _logger.LogInformation("Status: {Status}, Action: {Action},target {TargetUser} Time: {Time}",
+            _logger.LogInformation("Status: {Status}, Action: {Action}, target {TargetUser} Time: {Time}",
                 "Success",
                 "EditAdminPassword",
                 user.Email,
@@ -234,10 +206,7 @@ namespace aspapp.Controllers
 
         [Authorize(Roles = "ADMIN")]
         [HttpGet("EditAdmin")]
-        public async Task<IActionResult> EditAdmin()
-        {
-            return View();
-        }
+        public async Task<IActionResult> EditAdmin() => View();
 
         [Authorize(Roles = "ADMIN")]
         [HttpPost("EditAdmin")]
@@ -251,18 +220,14 @@ namespace aspapp.Controllers
             if (user == null)
                 return NotFound("Użytkownik nie został znaleziony.");
 
-            // Sprawdzenie, czy nowa nazwa użytkownika lub e-mail są już zajęte
             var existingUserByName = await _userManager.FindByNameAsync(model.UserName);
-
             if (existingUserByName != null && existingUserByName.Id != user.Id)
             {
                 ModelState.AddModelError("UserName", "Ta nazwa użytkownika jest już zajęta.");
                 return View(model);
             }
 
-            // Zmiana danych użytkownika
             user.UserName = model.UserName;
-
             var updateResult = await _userManager.UpdateAsync(user);
             if (!updateResult.Succeeded)
             {
@@ -276,9 +241,8 @@ namespace aspapp.Controllers
 
                 return View(model);
             }
-            _logger.LogInformation($"Admin {user.Email} edytuje nazwe uzytkownika");
 
-            _logger.LogInformation("Status: {Status}, Action: {Action},target {TargetUser} Time: {Time}",
+            _logger.LogInformation("Status: {Status}, Action: {Action}, target {TargetUser} Time: {Time}",
                 "Success",
                 "EditAdmin",
                 user.Email,
@@ -290,10 +254,7 @@ namespace aspapp.Controllers
 
         [Authorize(Roles = "ADMIN")]
         [HttpGet("BlockAccount")]
-        public async Task<IActionResult> BlockAccount()
-        {
-            return View();
-        }
+        public async Task<IActionResult> BlockAccount() => View();
 
         [Authorize(Roles = "ADMIN")]
         [HttpPost("BlockAccount")]
@@ -303,12 +264,10 @@ namespace aspapp.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            // Pobranie zalogowanego admina (tylko dla sprawdzenia)
             var admin = await _userManager.GetUserAsync(User);
             if (admin == null)
                 return NotFound("Zalogowany administrator nie został znaleziony.");
 
-            // Szukamy użytkownika po adresie e-mail
             var targetUser = await _userManager.FindByEmailAsync(model.Email);
             if (targetUser == null)
             {
@@ -323,51 +282,32 @@ namespace aspapp.Controllers
             }
 
             var daysToBlock = model.Days > 0 ? model.Days : 30;
-
-            // Ustawienie blokady
             await _userManager.SetLockoutEndDateAsync(targetUser, DateTimeOffset.UtcNow.AddDays(daysToBlock));
             await _userManager.UpdateAsync(targetUser);
 
+            _logger.LogInformation("Status: {Status}, Action: {Action}, target {TargetUser} Time: {Time}",
+                "Success",
+                "BlockAccount",
+                targetUser.Email,
+                DateTime.UtcNow);
+
             ViewBag.Message = $"Użytkownik {targetUser.Email} został zablokowany na {daysToBlock} dni.";
-
-            var isLocked = await _userManager.IsLockedOutAsync(targetUser);
-
-            _logger.LogInformation($"Admin {admin.Email} blokuje {targetUser}");
-
-            if (isLocked)
-            {
-                var lockoutEnd = await _userManager.GetLockoutEndDateAsync(targetUser);
-                return Content($"Użytkownik jest zablokowany do: {lockoutEnd?.LocalDateTime}");
-                ViewBag.Message = $"Użytkownik jest zablokowany do: {lockoutEnd?.LocalDateTime}";
-            }
-            else
-            {
-                return Content("Użytkownik NIE jest zablokowany.");
-                ViewBag.Message = "Użytkownik NIE jest zablokowany.";
-            }
-
             return View(model);
         }
 
         [Authorize(Roles = "ADMIN")]
         [HttpGet("DeleteAccount")]
-        public async Task<IActionResult> DeleteAccount()
-        {
-            return View();
-        }
+        public async Task<IActionResult> DeleteAccount() => View();
 
         [Authorize(Roles = "ADMIN")]
         [HttpPost("DeleteAccount")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteAccount(DeleteAccount model)
         {
-
-            // Pobierz aktualnie zalogowanego admina (tylko dla walidacji)
             var admin = await _userManager.GetUserAsync(User);
             if (admin == null)
                 return NotFound("Zalogowany administrator nie został znaleziony.");
 
-            // Znajdź użytkownika po e-mailu
             var targetUser = await _userManager.FindByEmailAsync(model.email);
             if (targetUser == null)
             {
@@ -375,49 +315,33 @@ namespace aspapp.Controllers
                 return View();
             }
 
-            // Zabezpieczenie: admin nie może usunąć samego siebie
             if (admin.Id == targetUser.Id)
             {
                 ModelState.AddModelError(string.Empty, "Nie możesz usunąć własnego konta administracyjnego.");
                 return View();
             }
 
-            // Usuń użytkownika
             var result = await _userManager.DeleteAsync(targetUser);
-
             if (!result.Succeeded)
             {
                 foreach (var error in result.Errors)
-                {
-                    Console.WriteLine($"[Identity] {error.Code}: {error.Description}");
                     ModelState.AddModelError(string.Empty, error.Description);
-                }
-
+                return View(model);
             }
 
-            if (result.Succeeded)
-            {
-                TempData["Message"] = "Użytkownik został usuniety.";
-                return RedirectToAction(nameof(Index));
-            }
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError(string.Empty, error.Description);
-            }
+            _logger.LogInformation("Status: {Status}, Action: {Action}, target {TargetUser} Time: {Time}",
+                "Success",
+                "DeleteAccount",
+                targetUser.Email,
+                DateTime.UtcNow);
 
-            _logger.LogInformation($"Admin {admin.Email} usuwa konto {targetUser}");
-
-            ViewBag.Message = $"Użytkownik {targetUser.Email} został pomyślnie usunięty.";
-
-            return View(model);
+            TempData["Message"] = "Użytkownik został usuniety.";
+            return RedirectToAction(nameof(Index));
         }
 
         [Authorize(Roles = "ADMIN")]
         [HttpGet("PasswordRequirments")]
-        public async Task<IActionResult> PasswordRequirments()
-        {
-            return View();
-        }
+        public async Task<IActionResult> PasswordRequirments() => View();
 
         [Authorize(Roles = "ADMIN")]
         [HttpPost("PasswordRequirments")]
@@ -435,12 +359,10 @@ namespace aspapp.Controllers
             if (admin == null)
                 return NotFound("Zalogowany administrator nie został znaleziony.");
 
-            // 🔍 Sprawdź, czy już istnieje rekord polityki
             var existingPolicy = await _context.SecuritySettings.FirstOrDefaultAsync();
 
             if (existingPolicy != null)
             {
-                // 🔁 Nadpisz istniejącą politykę
                 existingPolicy.RequiredLength = model.RequiredLength;
                 existingPolicy.RequireDigit = model.RequireDigit;
                 existingPolicy.RequireUppercase = model.RequireUppercase;
@@ -452,7 +374,6 @@ namespace aspapp.Controllers
             }
             else
             {
-                // 🆕 Utwórz nową politykę (np. o Id = 1)
                 var policy = new SecuritySettings
                 {
                     Id = 1,
@@ -463,7 +384,6 @@ namespace aspapp.Controllers
                     RequireNonAlphanumeric = model.RequireNonAlphanumeric,
                     PasswordValidity = model.PasswordValidity
                 };
-
                 await _context.SecuritySettings.AddAsync(policy);
             }
 
@@ -471,14 +391,22 @@ namespace aspapp.Controllers
 
             if (changes > 0)
             {
+                _logger.LogInformation("Status: {Status}, Action: {Action}, Time: {Time}",
+                    "Success",
+                    "PasswordRequirments",
+                    DateTime.UtcNow);
+
                 TempData["Message"] = "✅ Polityka haseł została zapisana pomyślnie.";
                 return RedirectToAction(nameof(PasswordRequirments));
-
             }
 
             ModelState.AddModelError(string.Empty, "⚠️ Nie udało się zapisać zmian w bazie danych.");
+            _logger.LogInformation("Status: {Status}, Action: {Action}, Time: {Time}",
+                "Failed",
+                "PasswordRequirments",
+                DateTime.UtcNow);
+
             return View(model);
         }
-
     }
 }
