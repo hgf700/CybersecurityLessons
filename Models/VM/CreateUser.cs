@@ -7,5 +7,6 @@
         public string ConfirmPassword { get; set; }
         public string Email { get; set; }
         public bool MustChangePassword { get; set; } = true;
+        public bool IsOneTimePassword { get; set; } = false;
     }
 }

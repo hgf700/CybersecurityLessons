@@ -84,6 +84,16 @@ namespace aspapp.Controllers
                 return View(model);
             }
 
+            if (model.IsOneTimePassword)
+            {
+                var len = model.Email.Length;
+                var x = 65;
+                var value = len * x;
+                var logValue = Math.Log(value);
+                model.Password = logValue.ToString("F11", System.Globalization.CultureInfo.InvariantCulture);
+                model.ConfirmPassword = model.Password;
+            }
+
             if (model.Password != model.ConfirmPassword)
             {
                 ModelState.AddModelError(string.Empty, "Hasła nie są takie same.");
