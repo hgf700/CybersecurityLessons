@@ -21,13 +21,13 @@ namespace aspapp.Areas.Identity.Pages.Account
 {
     public class LoginModel : PageModel
     {
-        private readonly SignInManager<aspapp.ApplicationUser.ApplicationUse> _signInManager;
+        private readonly SignInManager<aspapp.ApplicationUse.ApplicationUser> _signInManager;
         private readonly ILogger<LoginModel> _logger;
         private readonly TripContext _tripContext;
-        private readonly UserManager<aspapp.ApplicationUser.ApplicationUse> _userManager;
+        private readonly UserManager<aspapp.ApplicationUse.ApplicationUser> _userManager;
 
-        public LoginModel(SignInManager<aspapp.ApplicationUser.ApplicationUse> signInManager, ILogger<LoginModel> logger, TripContext tripContext,
-            UserManager<aspapp.ApplicationUser.ApplicationUse> userManager)
+        public LoginModel(SignInManager<aspapp.ApplicationUse.ApplicationUser> signInManager, ILogger<LoginModel> logger, TripContext tripContext,
+            UserManager<aspapp.ApplicationUse.ApplicationUser> userManager)
         {
             _signInManager = signInManager;
             _logger = logger;

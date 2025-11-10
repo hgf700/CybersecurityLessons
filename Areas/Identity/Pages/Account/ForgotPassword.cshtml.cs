@@ -18,10 +18,10 @@ namespace aspapp.Areas.Identity.Pages.Account
 {
     public class ForgotPasswordModel : PageModel
     {
-        private readonly UserManager<aspapp.ApplicationUser.ApplicationUse> _userManager;
+        private readonly UserManager<aspapp.ApplicationUse.ApplicationUser> _userManager;
         private readonly IEmailSender _emailSender;
 
-        public ForgotPasswordModel(UserManager<aspapp.ApplicationUser.ApplicationUse> userManager, IEmailSender emailSender)
+        public ForgotPasswordModel(UserManager<aspapp.ApplicationUse.ApplicationUser> userManager, IEmailSender emailSender)
         {
             _userManager = userManager;
             _emailSender = emailSender;

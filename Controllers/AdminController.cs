@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
+using Serilog.Context;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
@@ -16,16 +17,14 @@ namespace aspapp.Controllers
     [Route("admin")]
     public class AdminController : Controller
     {
-        private readonly SignInManager<aspapp.ApplicationUser.ApplicationUse> _signInManager;
-        private readonly UserManager<aspapp.ApplicationUser.ApplicationUse> _userManager;
+        private readonly SignInManager<aspapp.ApplicationUse.ApplicationUser> _signInManager;
+        private readonly UserManager<aspapp.ApplicationUse.ApplicationUser> _userManager;
         private readonly IEmailSender _emailSender;
         private readonly TripContext _context;
         private readonly ILogger<AdminController> _logger;
 
-        string[] roleNames = { "ADMIN", "User" };
-
-        public AdminController(UserManager<aspapp.ApplicationUser.ApplicationUse> userManager,
-                               SignInManager<ApplicationUser.ApplicationUse> signInManager,
+        public AdminController(UserManager<aspapp.ApplicationUse.ApplicationUser> userManager,
+                               SignInManager<ApplicationUse.ApplicationUser> signInManager,
                                IEmailSender emailSender,
                                TripContext context,
                                ILogger<AdminController> logger)
@@ -100,7 +99,7 @@ namespace aspapp.Controllers
                 return View(model);
             }
 
-            var identityUser = new aspapp.ApplicationUser.ApplicationUse
+            var identityUser = new aspapp.ApplicationUse.ApplicationUser
             {
                 UserName = model.Email,
                 Email = model.Email
@@ -115,14 +114,23 @@ namespace aspapp.Controllers
                 foreach (var error in result.Errors)
                     ModelState.AddModelError(string.Empty, error.Description);
 
-                _logger.LogInformation("{ActionStatus} for {User}", "CreateUser failed", model.Email);
+                using (LogContext.PushProperty("Action", "CreateUser failed"))
+                using (LogContext.PushProperty("Role", "User"))
+                {
+                    _logger.LogInformation("Action executed for {User}", model.Email);
+                }
+
                 return View(model);
             }
 
             await _userManager.AddToRoleAsync(identityUser, "User");
             TempData["Message"] = "Użytkownik został utworzony.";
 
-            _logger.LogInformation("{ActionStatus} for {User}", "CreateUser succeeded", identityUser.Email);
+            using (LogContext.PushProperty("Action", "CreateUser succeeded"))
+            using (LogContext.PushProperty("Role", "User"))
+            {
+                _logger.LogInformation("Action executed for {User}", identityUser.Email);
+            }
 
             // Email confirmation
             string returnUrl = Url.Content("~/admin");
@@ -176,13 +184,23 @@ namespace aspapp.Controllers
                 foreach (var error in result.Errors)
                     ModelState.AddModelError(string.Empty, error.Description);
 
-                _logger.LogInformation("{ActionStatus} for {User}", "EditAdminPassword failed", user.Email);
+                using (LogContext.PushProperty("Action", "EditAdminPassword failed"))
+                using (LogContext.PushProperty("Role", "ADMIN"))
+                {
+                    _logger.LogInformation("Action executed for {User}", user.Email);
+                }
+
                 return View(model);
             }
 
             await _signInManager.RefreshSignInAsync(user);
 
-            _logger.LogInformation("{ActionStatus} for {User}", "EditAdminPassword succeeded", user.Email);
+            using (LogContext.PushProperty("Action", "EditAdminPassword succeeded"))
+            using (LogContext.PushProperty("Role", "ADMIN"))
+            {
+                _logger.LogInformation("Action executed for {User}", user.Email);
+            }
+
             TempData["Message"] = "Hasło zostało pomyślnie zmienione.";
             return RedirectToAction("Index");
         }
@@ -215,11 +233,21 @@ namespace aspapp.Controllers
                 foreach (var error in updateResult.Errors)
                     ModelState.AddModelError(string.Empty, error.Description);
 
-                _logger.LogInformation("{ActionStatus} for {User}", "EditAdmin failed", user.Email);
+                using (Serilog.Context.LogContext.PushProperty("Action", "EditAdmin failed"))
+                using (Serilog.Context.LogContext.PushProperty("Role", "ADMIN"))
+                {
+                    _logger.LogInformation("Action executed for {User}", user.Email);
+                }
+
                 return View(model);
             }
 
-            _logger.LogInformation("{ActionStatus} for {User}", "EditAdmin succeeded", user.Email);
+            using (Serilog.Context.LogContext.PushProperty("Action", "EditAdmin succeeded"))
+            using (Serilog.Context.LogContext.PushProperty("Role", "ADMIN"))
+            {
+                _logger.LogInformation("Action executed for {User}", user.Email);
+            }
+
             ViewBag.Message = "Dane administratora zostały pomyślnie zaktualizowane.";
             return View(model);
         }
@@ -252,7 +280,12 @@ namespace aspapp.Controllers
             await _userManager.SetLockoutEndDateAsync(targetUser, DateTimeOffset.UtcNow.AddDays(daysToBlock));
             await _userManager.UpdateAsync(targetUser);
 
-            _logger.LogInformation("{ActionStatus} for {User}", "BlockAccount succeeded", targetUser.Email);
+            using (Serilog.Context.LogContext.PushProperty("Action", "BlockAccount succeeded"))
+            using (Serilog.Context.LogContext.PushProperty("Role", "ADMIN"))
+            {
+                _logger.LogInformation("Action executed for {User}", targetUser.Email);
+            }
+
             ViewBag.Message = $"Użytkownik {targetUser.Email} został zablokowany na {daysToBlock} dni.";
             return View(model);
         }
@@ -286,8 +319,13 @@ namespace aspapp.Controllers
                 return View(model);
             }
 
-            _logger.LogInformation("{ActionStatus} for {User}", "DeleteAccount succeeded", targetUser.Email);
-            TempData["Message"] = "Użytkownik został usuniety.";
+            using (Serilog.Context.LogContext.PushProperty("Action", "DeleteAccount succeeded"))
+            using (Serilog.Context.LogContext.PushProperty("Role", "ADMIN"))
+            {
+                _logger.LogInformation("Action executed for {User}", targetUser.Email);
+            }
+
+            TempData["Message"] = "Użytkownik został usunięty.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -341,14 +379,25 @@ namespace aspapp.Controllers
 
             if (changes > 0)
             {
-                _logger.LogInformation("{ActionStatus} for {User}", "PasswordRequirments saved successfully", admin.Email);
+                using (Serilog.Context.LogContext.PushProperty("Action", "PasswordRequirments saved successfully"))
+                using (Serilog.Context.LogContext.PushProperty("Role", "ADMIN"))
+                {
+                    _logger.LogInformation("Action executed for {User}", admin.Email);
+                }
+
                 TempData["Message"] = "✅ Polityka haseł została zapisana pomyślnie.";
                 return RedirectToAction(nameof(PasswordRequirments));
             }
 
             ModelState.AddModelError(string.Empty, "⚠️ Nie udało się zapisać zmian w bazie danych.");
-            _logger.LogInformation("{ActionStatus} for {User}", "PasswordRequirments failed", admin.Email);
+            using (Serilog.Context.LogContext.PushProperty("Action", "PasswordRequirments failed"))
+            using (Serilog.Context.LogContext.PushProperty("Role", "ADMIN"))
+            {
+                _logger.LogInformation("Action executed for {User}", admin.Email);
+            }
+
             return View(model);
         }
+
     }
 }

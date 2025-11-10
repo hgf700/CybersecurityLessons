@@ -1,6 +1,4 @@
-﻿using Serilog;
-using Serilog.Sinks.MSSqlServer;
-using aspapp.ApplicationUser;
+﻿using aspapp.ApplicationUse;
 using aspapp.ExtraTools;
 using aspapp.Models;
 using aspapp.Validator;
@@ -13,35 +11,51 @@ using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System.Globalization;
+using Serilog;
 using Serilog.Events;
+using Serilog.Sinks.MSSqlServer;
+using System.Collections.ObjectModel;
+using System.Globalization;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
-var DefaultConnection = "Server=LAPTOP-RNG4KAQI\\SQLEXPRESS01;Database=SecurityDB;Trusted_Connection=True;TrustServerCertificate=True";
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-// --- KONFIGURACJA BAZY DANYCH ---
+var columnOptions = new ColumnOptions();
+columnOptions.Store.Remove(StandardColumn.Properties); // opcjonalnie, jeśli nie chcesz kolumn JSON
+columnOptions.AdditionalColumns = new Collection<SqlColumn>
+{
+    new SqlColumn { ColumnName = "Role", DataType = System.Data.SqlDbType.NVarChar, DataLength = 100 },
+    new SqlColumn { ColumnName = "Action", DataType = System.Data.SqlDbType.NVarChar, DataLength = 100 }
+};
+
 builder.Services.AddDbContext<TripContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(connectionString));
+
 
 Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Information() // logi na poziomie Information i wyżej
-    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning) // ignoruje Info dla Microsoft.*
-    .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning) // EF Core info -> warning
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
     .Enrich.FromLogContext()
     .WriteTo.File(
-    "Logs/log.txt",
-    rollingInterval: RollingInterval.Day,
-    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}"
+        "Logs/log.txt",
+        rollingInterval: RollingInterval.Day,
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}"
     )
-    //.WriteTo.MSSqlServer(
-    //    connectionString: DefaultConnection,
-    //    sinkOptions: new MSSqlServerSinkOptions { 
-    //        TableName = "ApplicationLogs",
-    //        AutoCreateSqlTable = true
-    //    })
+    .WriteTo.MSSqlServer(
+        connectionString: connectionString,
+        sinkOptions: new MSSqlServerSinkOptions
+        {
+            TableName = "Logs",
+            AutoCreateSqlTable = true
+        },
+        columnOptions: columnOptions
+        )
     .CreateLogger();
+
+
 
 builder.Host.UseSerilog();
 
@@ -75,13 +89,13 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddRazorPages();
 
 // --- IDENTITY ---
-builder.Services.AddIdentity<ApplicationUse, IdentityRole>()
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<TripContext>()
     .AddDefaultTokenProviders()
     .AddDefaultUI();
 
 // --- WALIDATOR HASŁA DYNAMICZNY ---
-builder.Services.AddTransient<IPasswordValidator<ApplicationUse>, DynamicPasswordValidator<ApplicationUse>>();
+builder.Services.AddTransient<IPasswordValidator<ApplicationUser>, DynamicPasswordValidator<ApplicationUser>>();
 
 // --- FAKE EMAIL SENDER ---
 builder.Services.AddTransient<IEmailSender, NullEmailSender>();

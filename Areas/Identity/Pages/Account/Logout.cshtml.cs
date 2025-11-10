@@ -14,10 +14,10 @@ namespace aspapp.Areas.Identity.Pages.Account
 {
     public class LogoutModel : PageModel
     {
-        private readonly SignInManager<aspapp.ApplicationUser.ApplicationUse> _signInManager;
+        private readonly SignInManager<aspapp.ApplicationUse.ApplicationUser> _signInManager;
         private readonly ILogger<LogoutModel> _logger;
 
-        public LogoutModel(SignInManager<aspapp.ApplicationUser.ApplicationUse> signInManager, ILogger<LogoutModel> logger)
+        public LogoutModel(SignInManager<aspapp.ApplicationUse.ApplicationUser> signInManager, ILogger<LogoutModel> logger)
         {
             _signInManager = signInManager;
             _logger = logger;

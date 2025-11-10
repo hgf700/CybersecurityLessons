@@ -1,4 +1,4 @@
-﻿using aspapp.ApplicationUser;
+﻿using aspapp.ApplicationUse;
 
 namespace aspapp.Models.VM
 {
@@ -6,7 +6,7 @@ namespace aspapp.Models.VM
     {
         public int Id { get; set; }
         public string UserId { get; set; }
-        public ApplicationUse User { get; set; }
+        public ApplicationUser User { get; set; }
 
         public string PasswordHash { get; set; }
 

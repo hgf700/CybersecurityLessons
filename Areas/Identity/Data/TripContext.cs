@@ -1,4 +1,4 @@
-﻿using aspapp.ApplicationUser;
+﻿using aspapp.ApplicationUse;
 using aspapp.Models.VM;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace aspapp.Models
 {
-    public class TripContext : IdentityDbContext<ApplicationUse>
+    public class TripContext : IdentityDbContext<ApplicationUser>
     {
         public TripContext(DbContextOptions<TripContext> options) : base(options) { }
 

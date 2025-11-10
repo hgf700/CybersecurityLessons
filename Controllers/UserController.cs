@@ -11,15 +11,15 @@ namespace aspapp.Controllers
     [Route("user")]
     public class UserController : Controller
     {
-        private readonly UserManager<aspapp.ApplicationUser.ApplicationUse> _userManager;
-        private readonly SignInManager<aspapp.ApplicationUser.ApplicationUse> _signInManager;
+        private readonly UserManager<aspapp.ApplicationUse.ApplicationUser> _userManager;
+        private readonly SignInManager<aspapp.ApplicationUse.ApplicationUser> _signInManager;
         private readonly TripContext _tripContext;
         private readonly ILogger<UserController> _logger;
 
         string[] roleNames = { "ADMIN", "User" };
 
-        public UserController(UserManager<aspapp.ApplicationUser.ApplicationUse> userManager,
-                              SignInManager<ApplicationUser.ApplicationUse> signInManager,
+        public UserController(UserManager<aspapp.ApplicationUse.ApplicationUser> userManager,
+                              SignInManager<ApplicationUse.ApplicationUser> signInManager,
                               TripContext tripContext,
                               ILogger<UserController> logger)
         {

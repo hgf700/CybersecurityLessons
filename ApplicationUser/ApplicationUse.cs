@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using aspapp.Models.VM;
 
-namespace aspapp.ApplicationUser
+namespace aspapp.ApplicationUse
 {
-    public class ApplicationUse : IdentityUser
+    public class ApplicationUser : IdentityUser
     {
         public bool MustChangePassword { get; set; } = true;
 

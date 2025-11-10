@@ -16,9 +16,9 @@ namespace aspapp.Areas.Identity.Pages.Account
 {
     public class ResetPasswordModel : PageModel
     {
-        private readonly UserManager<aspapp.ApplicationUser.ApplicationUse> _userManager;
+        private readonly UserManager<aspapp.ApplicationUse.ApplicationUser> _userManager;
 
-        public ResetPasswordModel(UserManager<aspapp.ApplicationUser.ApplicationUse> userManager)
+        public ResetPasswordModel(UserManager<aspapp.ApplicationUse.ApplicationUser> userManager)
         {
             _userManager = userManager;
         }

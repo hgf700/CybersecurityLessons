@@ -24,18 +24,18 @@ namespace aspapp.Areas.Identity.Pages.Account
 {
     public class RegisterModel : PageModel
     {
-        private readonly SignInManager<aspapp.ApplicationUser.ApplicationUse> _signInManager;
-        private readonly UserManager<aspapp.ApplicationUser.ApplicationUse> _userManager;
-        private readonly IUserStore<aspapp.ApplicationUser.ApplicationUse> _userStore;
-        private readonly IUserEmailStore<aspapp.ApplicationUser.ApplicationUse> _emailStore;
+        private readonly SignInManager<aspapp.ApplicationUse.ApplicationUser> _signInManager;
+        private readonly UserManager<aspapp.ApplicationUse.ApplicationUser> _userManager;
+        private readonly IUserStore<aspapp.ApplicationUse.ApplicationUser> _userStore;
+        private readonly IUserEmailStore<aspapp.ApplicationUse.ApplicationUser> _emailStore;
         private readonly ILogger<RegisterModel> _logger;
         private readonly IEmailSender _emailSender;
         private readonly RoleManager<IdentityRole> _roleManager;
 
         public RegisterModel(
-            UserManager<aspapp.ApplicationUser.ApplicationUse> userManager,
-            IUserStore<aspapp.ApplicationUser.ApplicationUse> userStore,
-            SignInManager<aspapp.ApplicationUser.ApplicationUse> signInManager,
+            UserManager<aspapp.ApplicationUse.ApplicationUser> userManager,
+            IUserStore<aspapp.ApplicationUse.ApplicationUser> userStore,
+            SignInManager<aspapp.ApplicationUse.ApplicationUser> signInManager,
             ILogger<RegisterModel> logger,
             RoleManager<IdentityRole> roleManager,
             IEmailSender emailSender)
@@ -181,27 +181,27 @@ namespace aspapp.Areas.Identity.Pages.Account
             return Page();
         }
 
-        private aspapp.ApplicationUser.ApplicationUse CreateUser()
+        private aspapp.ApplicationUse.ApplicationUser CreateUser()
         {
             try
             {
-                return Activator.CreateInstance<aspapp.ApplicationUser.ApplicationUse>();
+                return Activator.CreateInstance<aspapp.ApplicationUse.ApplicationUser>();
             }
             catch
             {
-                throw new InvalidOperationException($"Can't create an instance of '{nameof(aspapp.ApplicationUser.ApplicationUse)}'. " +
-                    $"Ensure that '{nameof(aspapp.ApplicationUser.ApplicationUse)}' is not an abstract class and has a parameterless constructor, or alternatively " +
+                throw new InvalidOperationException($"Can't create an instance of '{nameof(aspapp.ApplicationUse.ApplicationUser)}'. " +
+                    $"Ensure that '{nameof(aspapp.ApplicationUse.ApplicationUser)}' is not an abstract class and has a parameterless constructor, or alternatively " +
                     $"override the register page in /Areas/Identity/Pages/Account/Register.cshtml");
             }
         }
 
-        private IUserEmailStore<aspapp.ApplicationUser.ApplicationUse> GetEmailStore()
+        private IUserEmailStore<aspapp.ApplicationUse.ApplicationUser> GetEmailStore()
         {
             if (!_userManager.SupportsUserEmail)
             {
                 throw new NotSupportedException("The default UI requires a user store with email support.");
             }
-            return (IUserEmailStore<aspapp.ApplicationUser.ApplicationUse>)_userStore;
+            return (IUserEmailStore<aspapp.ApplicationUse.ApplicationUser>)_userStore;
         }
     }
 }
