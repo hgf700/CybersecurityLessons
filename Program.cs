@@ -59,7 +59,7 @@ Log.Logger = new LoggerConfiguration()
 
 builder.Host.UseSerilog();
 
-Log.Information("Aplikacja uruchomiona");
+//Log.Information("Aplikacja uruchomiona");
 
 builder.Services.AddControllersWithViews()
     .AddViewLocalization(LanguageViewLocationExpanderFormat.Suffix);
@@ -130,11 +130,13 @@ using (var scope = app.Services.CreateScope())
         context.SecuritySettings.Add(new SecuritySettings
         {
             RequiredLength = 12,
-            RequireDigit = true,
+            RequireDigit = false,
             RequireUppercase = false,
             RequireLowercase = false,
-            RequireNonAlphanumeric = true,
-            PasswordValidity = 30
+            RequireNonAlphanumeric = false,
+            PasswordValidity = 30,
+            LimitOfWrongPasswords=5,
+            BlockTime = TimeSpan.FromMinutes(15),
         });
         context.SaveChanges();
     }

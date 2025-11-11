@@ -30,12 +30,31 @@
 
         <!-- Ukryte pole dla flagi hasła jednorazowego -->
         <input type="hidden" asp-for="IsOneTimePassword" />
+        <div class="mb-3">
+            <button type="button" class="toggle-btn btn btn-outline-danger" value="IsOneTimePassword" data-field="generateOtpBtn">
+                Utwórz z hasłem jednorazowym lg(a*x)
+            </button>
 
-        <button type="button" class="toggle-btn btn btn-outline-danger" value="IsOneTimePassword" data-field="generateOtpBtn">
-            Utwórz z hasłem jednorazowym
-        </button>
-
+        </div>
         <button type="submit" class="btn btn-primary">Utwórz</button>
         <a href="@Url.Action("Index")" class="btn btn-secondary">Powrót</a>
     </form>
 </div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.toggle-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const field = this.dataset.field;
+                const hiddenInput = document.querySelector(`input[name='${field}']`);
+
+                // Zmieniamy stan
+                const isActive = this.classList.toggle('btn-success');
+                this.classList.toggle('btn-outline-danger', !isActive);
+
+                // Zmieniamy wartość ukrytego pola
+                hiddenInput.value = isActive;
+            });
+        });
+    </script>
+}

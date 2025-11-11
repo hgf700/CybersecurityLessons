@@ -12,6 +12,7 @@ namespace aspapp.Models
 
         public DbSet<SecuritySettings> SecuritySettings { get; set; }
         public DbSet<PasswordHistory> PasswordHistories { get; set; }
+        public DbSet<Logs> Logs { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

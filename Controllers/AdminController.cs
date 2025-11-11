@@ -115,9 +115,9 @@ namespace aspapp.Controllers
                     ModelState.AddModelError(string.Empty, error.Description);
 
                 using (LogContext.PushProperty("Action", "CreateUser failed"))
-                using (LogContext.PushProperty("Role", "User"))
+                using (LogContext.PushProperty("Role", "Admin"))
                 {
-                    _logger.LogInformation("Action executed for {User}", model.Email);
+                    _logger.LogInformation("Action executed by {User}", model.Email);
                 }
 
                 return View(model);
@@ -397,6 +397,23 @@ namespace aspapp.Controllers
             }
 
             return View(model);
+        }
+
+        [HttpGet("ApplicationLogs")]
+        public async Task<IActionResult> ApplicationLogs()
+        {
+            var logs = await _context.Logs
+                .OrderByDescending(l => l.TimeStamp)
+                .Take(200) // ograniczenie, żeby nie przeciążyć strony
+                .ToListAsync();
+
+            if (!logs.Any())
+            {
+                TempData["Message"] = "Brak dostępnych logów w bazie danych.";
+                return View(new List<Logs>()); // zwróć pustą listę zamiast 404
+            }
+
+            return View(logs);
         }
 
     }

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Serilog.Context;
 
 namespace aspapp.Controllers
 {
@@ -33,6 +34,12 @@ namespace aspapp.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
+            using (LogContext.PushProperty("Action", "Accessed User Index"))
+            using (LogContext.PushProperty("Role", "User"))
+            {
+                _logger.LogInformation("User accessed the User Index page.");
+            }
+
             return View();
         }
 
@@ -40,6 +47,12 @@ namespace aspapp.Controllers
         [HttpGet("EditPasswordUser")]
         public async Task<IActionResult> EditPasswordUser()
         {
+            using (LogContext.PushProperty("Action", "Accessed EditPasswordUser view"))
+            using (LogContext.PushProperty("Role", "User"))
+            {
+                _logger.LogInformation("User accessed EditPasswordUser page.");
+            }
+
             return View();
         }
 
@@ -53,13 +66,26 @@ namespace aspapp.Controllers
 
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
+            {
+                using (LogContext.PushProperty("Action", "EditPasswordUser failed - user not found"))
+                using (LogContext.PushProperty("Role", "User"))
+                {
+                    _logger.LogWarning("Attempt to change password failed because user not found.");
+                }
                 return NotFound("Użytkownik nie został znaleziony.");
+            }
 
             var passwordValid = await _userManager.CheckPasswordAsync(user, model.OldPassword);
             if (!passwordValid)
             {
                 ModelState.AddModelError(string.Empty, "Niepoprawne obecne hasło.");
-                _logger.LogInformation("{ActionStatus} for {User}", "EditPasswordUser failed", user?.Email ?? "unknown");
+
+                using (LogContext.PushProperty("Action", "EditPasswordUser failed - incorrect current password"))
+                using (LogContext.PushProperty("Role", "User"))
+                {
+                    _logger.LogInformation("Password change attempt failed for {User}", user.Email);
+                }
+
                 return View(model);
             }
 
@@ -69,10 +95,16 @@ namespace aspapp.Controllers
                 foreach (var error in result.Errors)
                     ModelState.AddModelError(string.Empty, error.Description);
 
-                _logger.LogInformation("{ActionStatus} for {User}", "EditPasswordUser failed", user.Email);
+                using (LogContext.PushProperty("Action", "EditPasswordUser failed - validation errors"))
+                using (LogContext.PushProperty("Role", "User"))
+                {
+                    _logger.LogWarning("Password change failed for {User}", user.Email);
+                }
+
                 return View(model);
             }
 
+            // Zapisz historię zmian haseł
             user.LastPasswordChangeDate = DateTime.UtcNow;
             await _tripContext.PasswordHistories.AddAsync(new PasswordHistory
             {
@@ -82,11 +114,14 @@ namespace aspapp.Controllers
             await _tripContext.SaveChangesAsync();
             await _signInManager.RefreshSignInAsync(user);
 
-            _logger.LogInformation("{ActionStatus} for {User}", "EditPasswordUser succeeded", user.Email);
+            using (LogContext.PushProperty("Action", "EditPasswordUser succeeded"))
+            using (LogContext.PushProperty("Role", "User"))
+            {
+                _logger.LogInformation("Password changed successfully for {User}", user.Email);
+            }
 
             ViewBag.Message = "Hasło zostało pomyślnie zmienione.";
             return View("Index");
         }
-
     }
 }
