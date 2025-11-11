@@ -351,12 +351,22 @@ namespace aspapp.Controllers
 
             if (existingPolicy != null)
             {
-                existingPolicy.RequiredLength = model.RequiredLength;
-                existingPolicy.RequireDigit = model.RequireDigit;
-                existingPolicy.RequireUppercase = model.RequireUppercase;
-                existingPolicy.RequireLowercase = model.RequireLowercase;
-                existingPolicy.RequireNonAlphanumeric = model.RequireNonAlphanumeric;
-                existingPolicy.PasswordValidity = model.PasswordValidity;
+                if (model.RequiredLength != null)
+                    existingPolicy.RequiredLength = model.RequiredLength.Value;
+                if (model.RequireDigit != null)
+                    existingPolicy.RequireDigit = model.RequireDigit.Value;
+                if (model.RequireUppercase != null)
+                    existingPolicy.RequireUppercase = model.RequireUppercase.Value;
+                if (model.RequireLowercase != null)
+                    existingPolicy.RequireLowercase = model.RequireLowercase.Value;
+                if (model.RequireNonAlphanumeric != null)
+                    existingPolicy.RequireNonAlphanumeric = model.RequireNonAlphanumeric.Value;
+                if (model.PasswordValidity != null)
+                    existingPolicy.PasswordValidity = model.PasswordValidity.Value;
+                if (model.LimitOfWrongPasswords != null)
+                    existingPolicy.LimitOfWrongPasswords = model.LimitOfWrongPasswords.Value;
+                if (model.TimeOfInactivity != null)
+                    existingPolicy.TimeOfInactivity = model.TimeOfInactivity.Value;
 
                 _context.SecuritySettings.Update(existingPolicy);
             }
@@ -370,7 +380,9 @@ namespace aspapp.Controllers
                     RequireUppercase = model.RequireUppercase,
                     RequireLowercase = model.RequireLowercase,
                     RequireNonAlphanumeric = model.RequireNonAlphanumeric,
-                    PasswordValidity = model.PasswordValidity
+                    PasswordValidity = model.PasswordValidity,
+                    LimitOfWrongPasswords = model.LimitOfWrongPasswords,
+                    TimeOfInactivity = model.TimeOfInactivity,
                 };
                 await _context.SecuritySettings.AddAsync(policy);
             }

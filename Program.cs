@@ -137,6 +137,7 @@ using (var scope = app.Services.CreateScope())
             PasswordValidity = 30,
             LimitOfWrongPasswords=5,
             BlockTime = TimeSpan.FromMinutes(15),
+            TimeOfInactivity=TimeSpan.FromMinutes(10),
         });
         context.SaveChanges();
     }
