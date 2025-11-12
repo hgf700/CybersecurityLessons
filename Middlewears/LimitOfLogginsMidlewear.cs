@@ -16,14 +16,14 @@ namespace aspapp.Middlewears
             _next = next;
         }
 
-        public async Task InvokeAsync(HttpContext context, UserManager<ApplicationUser> userManager, TripContext db)
+        public async Task InvokeAsync(HttpContext http, UserManager<ApplicationUser> userManager, TripContext context)
         {
-            if (context.Request.Path.StartsWithSegments("/Identity/Account/Login") &&
-                context.Request.Method == HttpMethods.Post)
+            if (http.Request.Path.StartsWithSegments("/Identity/Account/Login") &&
+                http.Request.Method == HttpMethods.Post)
             {
-                // Pobierz dane z formularza logowania
-                var form = context.Request.Form;
+                var form = http.Request.Form;
                 var email = form["Input.Email"].ToString();
+                var password = form["Input.Password"].ToString();
 
                 if (!string.IsNullOrEmpty(email))
                 {
@@ -31,16 +31,40 @@ namespace aspapp.Middlewears
 
                     if (user != null)
                     {
-                        var securitySettings = await db.SecuritySettings.FirstOrDefaultAsync();
+                        var securitySettings = await context.SecuritySettings.FirstOrDefaultAsync();
                         var limit = securitySettings.LimitOfWrongPasswords;
                         var blockTime = securitySettings.BlockTime;
 
-                        
+                        var passwordValid = await userManager.CheckPasswordAsync(user, password);
+
+                        if (!passwordValid) {
+                            user.AccessFailedCount++;
+
+                            if (user.AccessFailedCount >= limit)
+                            {
+                                // Blokujemy użytkownika
+                                user.LockoutEnd = DateTimeOffset.UtcNow.Add(TimeSpan.FromMinutes(blockTime));
+                                user.AccessFailedCount = 0; // reset licznika po blokadzie
+                            }
+
+                            await userManager.UpdateAsync(user);
+                        }
+                        else
+                        {
+                            // Jeśli logowanie udane – resetujemy licznik
+                            if (user.AccessFailedCount > 0)
+                            {
+                                user.AccessFailedCount = 0;
+                                user.LockoutEnd = null;
+                                await userManager.UpdateAsync(user);
+                            }
+                        }
+
                     }
                 }
             }
 
-            await _next(context);
+            await _next(http);
         }
     }
 }

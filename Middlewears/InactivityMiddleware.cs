@@ -1,4 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http;
+using System;
+using System.Threading.Tasks;
 
 namespace aspapp.Middlewears
 {
@@ -15,26 +18,29 @@ namespace aspapp.Middlewears
 
         public async Task InvokeAsync(HttpContext context)
         {
-            if (context.User?.Identity?.IsAuthenticated == true)
+            // Nie sprawdzaj, jeśli użytkownik nie jest zalogowany lub wchodzi na stronę logowania
+            if (context.User?.Identity?.IsAuthenticated == true &&
+                !context.Request.Path.StartsWithSegments("/Account/Login"))
             {
-                var lastActivity = context.Session.GetString("LastActivity");
                 var now = DateTime.UtcNow;
+                var lastActivityStr = context.Session.GetString("LastActivity");
 
-                if (lastActivity != null)
+                if (!string.IsNullOrEmpty(lastActivityStr) &&
+                    DateTime.TryParse(lastActivityStr, out var lastActivity))
                 {
-                    var lastTime = DateTime.Parse(lastActivity);
+                    var inactivityDuration = now - lastActivity;
 
-                    // Sprawdź, czy użytkownik był nieaktywny zbyt długo
-                    if (now - lastTime > _timeout)
+                    if (inactivityDuration > _timeout)
                     {
-                        await context.SignOutAsync(); // wyloguj użytkownika
+                        // Zbyt długa bezczynność — wyloguj
+                        await context.SignOutAsync();
                         context.Session.Clear();
                         context.Response.Redirect("/Account/Login?reason=timeout");
                         return;
                     }
                 }
 
-                // Zaktualizuj znacznik czasu
+                // Zaktualizuj czas ostatniej aktywności
                 context.Session.SetString("LastActivity", now.ToString("O"));
             }
 

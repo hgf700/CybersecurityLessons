@@ -144,7 +144,7 @@ using (var scope = app.Services.CreateScope())
             RequireNonAlphanumeric = false,
             PasswordValidity = 30,
             LimitOfWrongPasswords = 5,
-            BlockTime = TimeSpan.FromMinutes(15),
+            BlockTime = 15,
             TimeOfInactivity = 10
         });
         context.SaveChanges();
@@ -156,7 +156,7 @@ using (var scope = app.Services.CreateScope())
     if (securitySettings != null)
     {
         var identityOptions = services.GetRequiredService<Microsoft.Extensions.Options.IOptions<IdentityOptions>>();
-        identityOptions.Value.Lockout.DefaultLockoutTimeSpan = securitySettings.BlockTime;
+        identityOptions.Value.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(securitySettings.BlockTime);
         identityOptions.Value.Lockout.MaxFailedAccessAttempts = securitySettings.LimitOfWrongPasswords;
         identityOptions.Value.Lockout.AllowedForNewUsers = true;
     }

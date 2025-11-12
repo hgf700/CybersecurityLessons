@@ -10,7 +10,7 @@
         public bool? RequireNonAlphanumeric { get; set; }
         public int? PasswordValidity { get; set; }
         public int LimitOfWrongPasswords { get; set; }
-        public TimeSpan BlockTime { get; set; } 
+        public double BlockTime { get; set; } 
         public int? TimeOfInactivity { get; set; } 
 
     }
