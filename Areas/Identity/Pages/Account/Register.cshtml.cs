@@ -144,6 +144,14 @@ namespace aspapp.Areas.Identity.Pages.Account
                 {
                     _logger.LogInformation("User created a new account with password.");
 
+                    var now = DateTime.UtcNow;
+
+                    if (user != null)
+                    {
+                        user.LastActivity = now;
+                        await _userManager.UpdateAsync(user);
+                    }
+
                     var userId = await _userManager.GetUserIdAsync(user);
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                     code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));

@@ -17,6 +17,7 @@ using Serilog.Events;
 using Serilog.Sinks.MSSqlServer;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Threading;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -101,6 +102,7 @@ builder.Services.Configure<IdentityOptions>(options =>
 {
     // Nie ustawiamy jeszcze nic – pobierzemy w runtime
 });
+
 
 // --- WALIDATOR HASŁA DYNAMICZNY ---
 builder.Services.AddTransient<IPasswordValidator<ApplicationUser>, DynamicPasswordValidator<ApplicationUser>>();
@@ -195,6 +197,9 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
+
+app.UseMiddleware<InactivityMiddleware>();
+
 app.UseAuthorization();
 
 app.MapRazorPages();

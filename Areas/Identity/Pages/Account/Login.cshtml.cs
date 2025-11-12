@@ -139,6 +139,16 @@ namespace aspapp.Areas.Identity.Pages.Account
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User logged in.");
+                    var now = DateTime.UtcNow;
+
+                    // Użyj await, żeby pobrać użytkownika z bazy
+                    var user = await _userManager.FindByNameAsync(Input.Email);
+                    if (user != null)
+                    {
+                        user.LastActivity = now;
+                        await _userManager.UpdateAsync(user);
+                    }
+
                     return LocalRedirect(returnUrl);
                 }
                 if (result.RequiresTwoFactor)

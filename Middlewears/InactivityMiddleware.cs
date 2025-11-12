@@ -1,5 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using aspapp.ApplicationUse;
+using aspapp.Models;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Threading.Tasks;
 
@@ -8,40 +12,42 @@ namespace aspapp.Middlewears
     public class InactivityMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly TimeSpan _timeout;
 
-        public InactivityMiddleware(RequestDelegate next, TimeSpan timeout)
+        public InactivityMiddleware(RequestDelegate next)
         {
             _next = next;
-            _timeout = timeout;
         }
 
         public async Task InvokeAsync(HttpContext context)
         {
-            // Nie sprawdzaj, jeśli użytkownik nie jest zalogowany lub wchodzi na stronę logowania
+            // Pobranie scoped serwisów wewnątrz InvokeAsync
+            var userManager = context.RequestServices.GetRequiredService<UserManager<ApplicationUser>>();
+            var db = context.RequestServices.GetRequiredService<TripContext>();
+
             if (context.User?.Identity?.IsAuthenticated == true &&
-                !context.Request.Path.StartsWithSegments("/Account/Login"))
+                !context.Request.Path.StartsWithSegments("/Identity/Account/Login"))
             {
-                var now = DateTime.UtcNow;
-                var lastActivityStr = context.Session.GetString("LastActivity");
+                var user = await userManager.GetUserAsync(context.User);
 
-                if (!string.IsNullOrEmpty(lastActivityStr) &&
-                    DateTime.TryParse(lastActivityStr, out var lastActivity))
+                if (user != null)
                 {
-                    var inactivityDuration = now - lastActivity;
+                    var settings = await db.SecuritySettings.FirstOrDefaultAsync();
+                    var timeout = TimeSpan.FromMinutes(settings?.TimeOfInactivity ?? 10);
 
-                    if (inactivityDuration > _timeout)
+                    if (user.LastActivity.HasValue)
                     {
-                        // Zbyt długa bezczynność — wyloguj
-                        await context.SignOutAsync();
-                        context.Session.Clear();
-                        context.Response.Redirect("/Account/Login?reason=timeout");
-                        return;
+                        var inactivity = DateTime.UtcNow - user.LastActivity.Value;
+                        if (inactivity > timeout)
+                        {
+                            await context.SignOutAsync();
+                            context.Response.Redirect("/Identity/Account/Login?reason=timeout");
+                            return;
+                        }
                     }
-                }
 
-                // Zaktualizuj czas ostatniej aktywności
-                context.Session.SetString("LastActivity", now.ToString("O"));
+                    user.LastActivity = DateTime.UtcNow;
+                    await userManager.UpdateAsync(user);
+                }
             }
 
             await _next(context);
