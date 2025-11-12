@@ -76,6 +76,8 @@ namespace aspapp.Controllers
                     Console.WriteLine($"❌ {e.ErrorMessage}");
             }
 
+
+
             var targetUser = await _userManager.FindByEmailAsync(model.Email);
             if (targetUser != null)
             {
@@ -85,29 +87,59 @@ namespace aspapp.Controllers
 
             if (model.IsOneTimePassword)
             {
+
                 var len = model.Email.Length;
                 var x = 65;
                 var value = len * x;
                 var logValue = Math.Log(value);
-                model.Password = logValue.ToString("F11", System.Globalization.CultureInfo.InvariantCulture);
-                model.ConfirmPassword = model.Password;
-            }
+                var otp = $"{logValue:F11}Aa";
+                model.Password = otp;
+                model.ConfirmPassword = otp;
 
-            if (model.Password != model.ConfirmPassword)
-            {
-                ModelState.AddModelError(string.Empty, "Hasła nie są takie same.");
-                return View(model);
+                ModelState.Remove(nameof(model.Password));
+                ModelState.Remove(nameof(model.ConfirmPassword));
+                ModelState.ClearValidationState(nameof(model.Password));
+                ModelState.ClearValidationState(nameof(model.ConfirmPassword));
+                TryValidateModel(model);
+
+                Console.WriteLine($"📨 IsOneTimePassword = {model.IsOneTimePassword}");
+
             }
+            else
+            {
+                if (model.Password != model.ConfirmPassword)
+                {
+                    ModelState.AddModelError(string.Empty, "Hasła nie są takie same.");
+                    return View(model);
+                }
+            }
+            Console.WriteLine($"📨 IsOneTimePassword = {model.IsOneTimePassword}");
+
+            //ModelState.Remove("UserName");
+            //ModelState.Remove(nameof(model.UserName));
 
             var identityUser = new aspapp.ApplicationUse.ApplicationUser
             {
-                UserName = model.Email,
-                Email = model.Email
+                UserName = model.Email.Trim(),
+                Email = model.Email.Trim()
             };
+
+            Console.WriteLine($"📧 Email: {model.Email}");
+            Console.WriteLine($"👤 UserName (to samo co email): {identityUser.UserName}");
+            Console.WriteLine($"🔐 Password: {model.Password}");
+
+            
 
             var result = await _userManager.CreateAsync(identityUser, model.Password);
             await _userManager.SetLockoutEndDateAsync(identityUser, null);
             await _userManager.ResetAccessFailedCountAsync(identityUser);
+
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                    Console.WriteLine($"❌ Identity Error: {error.Description}");
+            }
+
 
             if (!result.Succeeded)
             {
@@ -364,7 +396,7 @@ namespace aspapp.Controllers
                 if (model.PasswordValidity != null)
                     existingPolicy.PasswordValidity = model.PasswordValidity.Value;
                 if (model.LimitOfWrongPasswords != null)
-                    existingPolicy.LimitOfWrongPasswords = model.LimitOfWrongPasswords.Value;
+                    existingPolicy.LimitOfWrongPasswords = model.LimitOfWrongPasswords;
                 if (model.TimeOfInactivity != null)
                     existingPolicy.TimeOfInactivity = model.TimeOfInactivity.Value;
 

@@ -1,5 +1,6 @@
 ﻿using aspapp.ApplicationUse;
 using aspapp.ExtraTools;
+using aspapp.Middlewears;
 using aspapp.Models;
 using aspapp.Validator;
 using AutoMapper;
@@ -19,6 +20,8 @@ using System.Globalization;
 
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddSession();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
@@ -94,6 +97,11 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddDefaultTokenProviders()
     .AddDefaultUI();
 
+builder.Services.Configure<IdentityOptions>(options =>
+{
+    // Nie ustawiamy jeszcze nic – pobierzemy w runtime
+});
+
 // --- WALIDATOR HASŁA DYNAMICZNY ---
 builder.Services.AddTransient<IPasswordValidator<ApplicationUser>, DynamicPasswordValidator<ApplicationUser>>();
 
@@ -122,7 +130,7 @@ using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var context = services.GetRequiredService<TripContext>();
-    context.Database.Migrate();
+    //context.Database.Migrate();
 
     // 🔒 Domyślna polityka haseł, jeśli nie istnieje
     if (!context.SecuritySettings.Any())
@@ -135,11 +143,22 @@ using (var scope = app.Services.CreateScope())
             RequireLowercase = false,
             RequireNonAlphanumeric = false,
             PasswordValidity = 30,
-            LimitOfWrongPasswords=5,
+            LimitOfWrongPasswords = 5,
             BlockTime = TimeSpan.FromMinutes(15),
-            TimeOfInactivity=TimeSpan.FromMinutes(10),
+            TimeOfInactivity = 10
         });
         context.SaveChanges();
+    }
+
+    var securitySettings = context.SecuritySettings.FirstOrDefault();
+
+    // 🧩 Nadpisanie ustawień Identity dynamicznie z bazy
+    if (securitySettings != null)
+    {
+        var identityOptions = services.GetRequiredService<Microsoft.Extensions.Options.IOptions<IdentityOptions>>();
+        identityOptions.Value.Lockout.DefaultLockoutTimeSpan = securitySettings.BlockTime;
+        identityOptions.Value.Lockout.MaxFailedAccessAttempts = securitySettings.LimitOfWrongPasswords;
+        identityOptions.Value.Lockout.AllowedForNewUsers = true;
     }
 
     // 🧩 Role systemowe
@@ -155,6 +174,8 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+
+
 // --- PIPELINE ---
 if (app.Environment.IsDevelopment())
 {
@@ -165,6 +186,10 @@ else
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
+
+app.UseSession();
+
+app.UseMiddleware<LimitOfLogginsMiddleware>();
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();

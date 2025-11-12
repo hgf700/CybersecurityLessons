@@ -28,17 +28,17 @@ namespace aspapp.Validator
             if (password.Length < settings.RequiredLength)
                 errors.Add(new IdentityError { Description = $"Hasło musi mieć co najmniej {settings.RequiredLength} znaków." });
 
-            if (settings.RequireDigit && !password.Any(char.IsDigit))
-                errors.Add(new IdentityError { Description = "Hasło musi zawierać cyfrę." });
+            //if (settings.RequireDigit && !password.Any(char.IsDigit))
+            //    errors.Add(new IdentityError { Description = "Hasło musi zawierać cyfrę." });
 
-            if (settings.RequireLowercase && !password.Any(char.IsLower))
-                errors.Add(new IdentityError { Description = "Hasło musi zawierać małą literę." });
+            //if (settings.RequireLowercase && !password.Any(char.IsLower))
+            //    errors.Add(new IdentityError { Description = "Hasło musi zawierać małą literę." });
 
-            if (settings.RequireUppercase && !password.Any(char.IsUpper))
-                errors.Add(new IdentityError { Description = "Hasło musi zawierać wielką literę." });
+            //if (settings.RequireUppercase && !password.Any(char.IsUpper))
+            //    errors.Add(new IdentityError { Description = "Hasło musi zawierać wielką literę." });
 
-            if (settings.RequireNonAlphanumeric && password.All(char.IsLetterOrDigit))
-                errors.Add(new IdentityError { Description = "Hasło musi zawierać znak specjalny." });
+            //if (settings.RequireNonAlphanumeric && password.All(char.IsLetterOrDigit))
+            //    errors.Add(new IdentityError { Description = "Hasło musi zawierać znak specjalny." });
 
             return errors.Count == 0 ? IdentityResult.Success : IdentityResult.Failed(errors.ToArray());
         }

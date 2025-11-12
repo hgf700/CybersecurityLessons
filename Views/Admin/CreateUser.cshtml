@@ -10,8 +10,11 @@
     <form asp-action="CreateUser" method="post" id="createUserForm">
         @Html.AntiForgeryToken()
 
+        <div asp-validation-summary="All" class="text-danger"></div>
+
+
         <div class="mb-3">
-            <label asp-for="Email" class="form-label">E-mail</label>
+            <label asp-for="Email" class="form-label" required>E-mail</label>
             <input asp-for="Email" class="form-control" />
             <span asp-validation-for="Email" class="text-danger"></span>
         </div>
@@ -19,23 +22,23 @@
         <div class="mb-3">
             <label asp-for="Password" class="form-label">Hasło</label>
             <input asp-for="Password" class="form-control" type="password" />
-            <span asp-validation-for="Password" class="text-danger"></span>
+             <span asp-validation-for="Password" class="text-danger"></span> 
         </div>
 
         <div class="mb-3">
             <label asp-for="ConfirmPassword" class="form-label">Powtórz Hasło</label>
             <input asp-for="ConfirmPassword" class="form-control" type="password" />
-            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+            <span asp-validation-for="ConfirmPassword" class="text-danger"></span> 
         </div>
 
         <!-- Ukryte pole dla flagi hasła jednorazowego -->
-        <input type="hidden" asp-for="IsOneTimePassword" />
-        <div class="mb-3">
-            <button type="button" class="toggle-btn btn btn-outline-danger" value="IsOneTimePassword" data-field="generateOtpBtn">
-                Utwórz z hasłem jednorazowym lg(a*x)
-            </button>
 
-        </div>
+        <input type="hidden" asp-for="IsOneTimePassword" value="false" />
+
+        <button type="button" class="toggle-btn btn btn-outline-danger" data-field="IsOneTimePassword">
+            Utwórz z hasłem jednorazowym lg(a*x)
+        </button>
+        
         <button type="submit" class="btn btn-primary">Utwórz</button>
         <a href="@Url.Action("Index")" class="btn btn-secondary">Powrót</a>
     </form>
@@ -43,18 +46,33 @@
 
 @section Scripts {
     <script>
-        document.querySelectorAll('.toggle-btn').forEach(btn => {
-            btn.addEventListener('click', function () {
-                const field = this.dataset.field;
-                const hiddenInput = document.querySelector(`input[name='${field}']`);
+        console.log("✅ Skrypt JS został załadowany");
 
-                // Zmieniamy stan
-                const isActive = this.classList.toggle('btn-success');
-                this.classList.toggle('btn-outline-danger', !isActive);
+        document.addEventListener("DOMContentLoaded", () => {
+            console.log("📦 DOM wczytany – szukam przycisku...");
+            const toggleBtn = document.querySelector(".toggle-btn");
+            const hiddenInput = document.querySelector("input[name='IsOneTimePassword']");
 
-                // Zmieniamy wartość ukrytego pola
-                hiddenInput.value = isActive;
+            if (!toggleBtn) {
+                console.error("❌ Nie znaleziono przycisku .toggle-btn");
+                return;
+            }
+            if (!hiddenInput) {
+                console.error("❌ Nie znaleziono pola hidden input[name='IsOneTimePassword']");
+                return;
+            }
+
+            console.log("✅ Znaleziono elementy – nasłuchuję kliknięć");
+
+            toggleBtn.addEventListener("click", function () {
+                const isActive = this.classList.toggle("btn-success");
+                this.classList.toggle("btn-outline-danger", !isActive);
+                hiddenInput.value = isActive ? "true" : "false";
+
+                console.log("🔁 IsOneTimePassword ustawione na:", hiddenInput.value);
             });
         });
     </script>
 }
+
+
