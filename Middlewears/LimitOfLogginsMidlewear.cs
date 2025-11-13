@@ -24,7 +24,6 @@ namespace aspapp.Middlewears
                 var form = http.Request.Form;
                 var email = form["Input.Email"].ToString();
                 var password = form["Input.Password"].ToString();
-
                 if (!string.IsNullOrEmpty(email))
                 {
                     var user = await userManager.Users.FirstOrDefaultAsync(u => u.Email == email);
@@ -36,22 +35,18 @@ namespace aspapp.Middlewears
                         var blockTime = securitySettings.BlockTime;
 
                         var passwordValid = await userManager.CheckPasswordAsync(user, password);
-
                         if (!passwordValid) {
                             user.AccessFailedCount++;
 
                             if (user.AccessFailedCount >= limit)
                             {
-                                // Blokujemy użytkownika
                                 user.LockoutEnd = DateTimeOffset.UtcNow.Add(TimeSpan.FromMinutes(blockTime));
                                 user.AccessFailedCount = 0; // reset licznika po blokadzie
                             }
-
                             await userManager.UpdateAsync(user);
                         }
                         else
                         {
-                            // Jeśli logowanie udane – resetujemy licznik
                             if (user.AccessFailedCount > 0)
                             {
                                 user.AccessFailedCount = 0;
@@ -59,11 +54,9 @@ namespace aspapp.Middlewears
                                 await userManager.UpdateAsync(user);
                             }
                         }
-
                     }
                 }
             }
-
             await _next(http);
         }
     }

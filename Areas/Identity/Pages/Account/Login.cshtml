@@ -46,6 +46,7 @@
                     <p>
                         <a id="resend-confirmation" asp-page="./ResendEmailConfirmation">Resend email confirmation</a>
                     </p>
+                    
                 </div>
             </form>
         </section>
@@ -57,6 +58,9 @@
         <p>User</p>
         <p>ASDasd1@gmail.com</p>
             <h3>Use another service to log in.</h3>
+            <p>
+                <a id="resend-confirmation" asp-page="./CaptchaLogin">Captcha Login</a>
+            </p>
             <hr />
             @{
                 if ((Model.ExternalLogins?.Count ?? 0) == 0)

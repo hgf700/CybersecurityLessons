@@ -141,7 +141,6 @@ namespace aspapp.Areas.Identity.Pages.Account
                     _logger.LogInformation("User logged in.");
                     var now = DateTime.UtcNow;
 
-                    // Użyj await, żeby pobrać użytkownika z bazy
                     var user = await _userManager.FindByNameAsync(Input.Email);
                     if (user != null)
                     {
