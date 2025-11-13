@@ -24,6 +24,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSession();
 
+IConfiguration config = new ConfigurationBuilder()
+            .AddEnvironmentVariables()
+            .Build();
+
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 var columnOptions = new ColumnOptions();

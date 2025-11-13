@@ -14,7 +14,7 @@ namespace aspapp.Controllers
             string code = new Random().Next(1000, 9999).ToString();
             HttpContext.Session.SetString("CaptchaCode", code);
 
-            using var bmp = new Bitmap(100, 40);
+            using var bmp = new Bitmap(200, 40);
             using var g = Graphics.FromImage(bmp);
             g.Clear(Color.White);
             using var font = new Font("Arial", 20, FontStyle.Bold);

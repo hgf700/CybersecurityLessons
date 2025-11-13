@@ -194,6 +194,7 @@ namespace aspapp.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
+
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
                 return NotFound("Użytkownik nie został znaleziony.");
@@ -236,6 +237,89 @@ namespace aspapp.Controllers
             TempData["Message"] = "Hasło zostało pomyślnie zmienione.";
             return RedirectToAction("Index");
         }
+
+        [HttpGet("EditAdminPasswordReCAPTCHA")]
+        public async Task<IActionResult> EditAdminPasswordReCAPTCHA() {
+            
+            
+            
+            return View();
+        }
+
+        [HttpPost("EditAdminPasswordReCAPTCHA")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditAdminPasswordReCAPTCHA(EditPassword model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return NotFound("Użytkownik nie został znaleziony.");
+
+            if (!await _userManager.CheckPasswordAsync(user, model.OldPassword))
+            {
+                ModelState.AddModelError(string.Empty, "Niepoprawne obecne hasło.");
+                return View(model);
+            }
+
+            if (model.NewPassword != model.ConfirmPassword)
+            {
+                ModelState.AddModelError(string.Empty, "Nowe hasła nie są takie same.");
+                return View(model);
+            }
+
+            var recaptchaResponse = Request.Form["g-recaptcha-response"];
+            string secretKey = Environment.GetEnvironmentVariable("secret_key");
+
+            using var httpClient = new HttpClient();
+            var response = await httpClient.PostAsync(
+                "https://www.google.com/recaptcha/api/siteverify",
+                new FormUrlEncodedContent(new Dictionary<string, string>
+                {
+                    { "secret", secretKey },
+                    { "response", recaptchaResponse }
+                })
+            );
+
+            var json = await response.Content.ReadAsStringAsync();
+            var captchaResult = System.Text.Json.JsonDocument.Parse(json);
+            var successCaptcha = captchaResult.RootElement.GetProperty("success").GetBoolean();
+
+
+            if (!successCaptcha)
+            {
+                ModelState.AddModelError(string.Empty, "Weryfikacja reCAPTCHA nie powiodła się.");
+                return View(model);
+            }
+
+            var result = await _userManager.ChangePasswordAsync(user, model.OldPassword, model.NewPassword);
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                    ModelState.AddModelError(string.Empty, error.Description);
+
+                using (LogContext.PushProperty("Action", "EditAdminPassword failed"))
+                using (LogContext.PushProperty("Role", "ADMIN"))
+                {
+                    _logger.LogInformation("Action executed for {User}", user.Email);
+                }
+
+                return View(model);
+            }
+
+            await _signInManager.RefreshSignInAsync(user);
+
+            using (LogContext.PushProperty("Action", "EditAdminPassword succeeded"))
+            using (LogContext.PushProperty("Role", "ADMIN"))
+            {
+                _logger.LogInformation("Action executed for {User}", user.Email);
+            }
+
+            TempData["Message"] = "Hasło zostało pomyślnie zmienione.";
+            return RedirectToAction("Index");
+        }
+
 
         [HttpGet("EditAdmin")]
         public async Task<IActionResult> EditAdmin() => View();

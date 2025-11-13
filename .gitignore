@@ -4,3 +4,4 @@ obj/
 Migrations/
 Logs/
 moje.txt
+.env

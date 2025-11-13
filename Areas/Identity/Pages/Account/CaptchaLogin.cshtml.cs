@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using OpenQA.Selenium.BiDi.Modules.Input;
 using System.ComponentModel.DataAnnotations;
 
 namespace aspapp.Areas.Identity.Pages.Account
@@ -26,6 +27,12 @@ namespace aspapp.Areas.Identity.Pages.Account
             _tripContext = tripContext;
             _userManager = userManager;
         }
+
+
+        [BindProperty]
+        public string CaptchaInput { get; set; }
+        public string CaptchaReversed { get; set; }
+
 
         [BindProperty]
         public InputModel Input { get; set; }
@@ -49,12 +56,14 @@ namespace aspapp.Areas.Identity.Pages.Account
             public bool RememberMe { get; set; }
         }
 
-        public async Task OnGetAsync(string returnUrl = null)
+        public async Task OnGetAsync(string returnUrl = null, string CaptchaInput = null)
         {
             if (!string.IsNullOrEmpty(ErrorMessage))
             {
                 ModelState.AddModelError(string.Empty, ErrorMessage);
             }
+
+            
 
             returnUrl ??= Url.Content("~/");
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
@@ -70,9 +79,12 @@ namespace aspapp.Areas.Identity.Pages.Account
             if (!ModelState.IsValid)
                 return Page();
 
-            // ✅ Weryfikacja CAPTCHA
             var sessionCaptcha = HttpContext.Session.GetString("CaptchaCode");
-            if (string.IsNullOrEmpty(sessionCaptcha) || CaptchaInput != sessionCaptcha)
+            char[] charArray = sessionCaptcha.ToCharArray();
+            Array.Reverse(charArray);
+            string reversed = new string(charArray);
+
+            if (string.IsNullOrEmpty(sessionCaptcha) || CaptchaInput != reversed)
             {
                 ModelState.AddModelError(string.Empty, "Nieprawidłowy kod CAPTCHA.");
                 return Page();
