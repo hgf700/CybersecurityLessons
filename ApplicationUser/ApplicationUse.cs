@@ -6,6 +6,7 @@ namespace aspapp.ApplicationUse
     public class ApplicationUser : IdentityUser
     {
         public bool MustChangePassword { get; set; } = true;
+        public string? Licence { get; set; }
 
         public DateTime? LastPasswordChangeDate { get; set; }
 

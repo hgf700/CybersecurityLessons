@@ -19,3 +19,13 @@ else
         }
     </ul>
 }
+
+
+<div>
+    <form asp-action="ChangeTypeOfLicence" method="post">
+        @Html.AntiForgeryToken()
+
+        <button type="submit" class="btn btn-warning">Zmień licencje</button>
+        <a href="@Url.Action("Index")" class="btn btn-secondary">Powrót</a>
+    </form>
+</div>

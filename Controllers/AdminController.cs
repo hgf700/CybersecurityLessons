@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Serilog.Context;
+using System.IO;
+using System.Runtime.ConstrainedExecution;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
@@ -546,26 +548,56 @@ namespace aspapp.Controllers
         [HttpGet("ReadingFiles")]
         public async Task<IActionResult> ReadingFiles()
         {
-            var folderPath = Path.Combine(Directory.GetCurrentDirectory(), "App_Data");
+            var path = Path.Combine(Directory.GetCurrentDirectory(), "App_Data");
 
-            var txtFiles = Directory.GetFiles(folderPath, "*.txt")
-                            .Select(Path.GetFileName)
-                            .ToList();
+            var files = Directory.GetFiles(path)
+                         .Select(Path.GetFileName)
+                         .ToList();
 
-            var docxFiles = Directory.GetFiles(folderPath, "*.docx")
-                            .Select(Path.GetFileName)
-                            .ToList();
+            return View(files);
+        }
 
-            var allFIles = txtFiles.Concat(docxFiles).ToList();
+        [HttpPost("ChangeTypeOfLicence")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangeTypeOfLicence()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return NotFound("Użytkownik nie został znaleziony.");
 
-            return View(allFIles);
+            ViewBag.Message = $"Zalogowano jako {user.Email}";
+
+            if (user.Licence == "demo")
+            {
+                user.Licence = "full_version";
+            }
+            else if(user.Licence == "full_version")
+            {
+                user.Licence = "demo";
+            }
+
+            var result = await _userManager.UpdateAsync(user);
+
+            if (!result.Succeeded)
+                return BadRequest("Nie udało się zaktualizować licencji.");
+
+            return RedirectToAction("ReadingFiles");
         }
 
         [HttpGet("DownloadFile")]
-        public IActionResult DownloadFile(string fileName)
+        public async Task<IActionResult> DownloadFile(string fileName)
         {
             if (string.IsNullOrEmpty(fileName))
                 return BadRequest("Brak nazwy pliku.");
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return Unauthorized();
+
+            if (user.Licence == "demo" && Path.GetExtension(fileName).ToLower() != ".txt")
+            {
+                return Content("❌ Wersja DEMO umożliwia otwieranie tylko plików TXT.");
+            }
 
             var folderPath = Path.Combine(Directory.GetCurrentDirectory(), "App_Data");
             var fullPath = Path.Combine(folderPath, fileName);

@@ -146,9 +146,12 @@ namespace aspapp.Areas.Identity.Pages.Account
 
                     var now = DateTime.UtcNow;
 
+                    string licence = "demo";
+
                     if (user != null)
                     {
                         user.LastActivity = now;
+                        user.Licence=licence;
                         await _userManager.UpdateAsync(user);
                     }
 

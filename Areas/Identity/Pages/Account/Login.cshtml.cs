@@ -141,12 +141,17 @@ namespace aspapp.Areas.Identity.Pages.Account
                     _logger.LogInformation("User logged in.");
                     var now = DateTime.UtcNow;
 
+                    
+
                     var user = await _userManager.FindByNameAsync(Input.Email);
                     if (user != null)
                     {
                         user.LastActivity = now;
                         await _userManager.UpdateAsync(user);
                     }
+
+                    
+
 
                     return LocalRedirect(returnUrl);
                 }
