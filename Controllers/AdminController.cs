@@ -1,5 +1,6 @@
 ﻿using aspapp.Models;
 using aspapp.Models.VM;
+using aspapp.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -557,9 +558,9 @@ namespace aspapp.Controllers
             return View(files);
         }
 
-        [HttpPost("ChangeTypeOfLicence")]
+        [HttpPost("ToggleLicence")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ChangeTypeOfLicence()
+        public async Task<IActionResult> ToggleLicence()
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
@@ -571,7 +572,7 @@ namespace aspapp.Controllers
             {
                 user.Licence = "full_version";
             }
-            else if(user.Licence == "full_version")
+            else if (user.Licence == "full_version")
             {
                 user.Licence = "demo";
             }
@@ -580,6 +581,30 @@ namespace aspapp.Controllers
 
             if (!result.Succeeded)
                 return BadRequest("Nie udało się zaktualizować licencji.");
+
+            return RedirectToAction("ReadingFiles");
+        }
+
+        private const string key = "TAJNE";
+
+        [HttpPost("ActivateLicense")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ActivateLicense(string licenseKey)
+        {
+            string decrypted = VigenereCipher.Decipher(licenseKey, key);
+
+            if (decrypted == "FULL_VERSION")
+            {
+                var user = await _userManager.GetUserAsync(User);
+                user.Licence = "full_version";
+                await _userManager.UpdateAsync(user);
+
+                ViewBag.Message = "Licencja aktywowana! Masz pełną wersję.";
+            }
+            else
+            {
+                ViewBag.Message = "❌ Nieprawidłowy klucz licencyjny.";
+            }
 
             return RedirectToAction("ReadingFiles");
         }

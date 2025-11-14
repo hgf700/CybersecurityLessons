@@ -50,5 +50,10 @@
         {
             return Cipher(input, key, false);
         }
+
+        //string text = "Hello, World!";
+        //string cipherText = Encipher(text, "cipher");
+        //string plainText = Decipher(cipherText, "cipher");
+
     }
 }
