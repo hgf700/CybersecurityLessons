@@ -320,7 +320,6 @@ namespace aspapp.Controllers
             return RedirectToAction("Index");
         }
 
-
         [HttpGet("EditAdmin")]
         public async Task<IActionResult> EditAdmin() => View();
 
@@ -542,6 +541,39 @@ namespace aspapp.Controllers
             }
 
             return View(logs);
+        }
+
+        [HttpGet("ReadingFiles")]
+        public async Task<IActionResult> ReadingFiles()
+        {
+            var folderPath = Path.Combine(Directory.GetCurrentDirectory(), "App_Data");
+
+            var txtFiles = Directory.GetFiles(folderPath, "*.txt")
+                            .Select(Path.GetFileName)
+                            .ToList();
+
+            var docxFiles = Directory.GetFiles(folderPath, "*.docx")
+                            .Select(Path.GetFileName)
+                            .ToList();
+
+            var allFIles = txtFiles.Concat(docxFiles).ToList();
+
+            return View(allFIles);
+        }
+
+        [HttpGet("DownloadFile")]
+        public IActionResult DownloadFile(string fileName)
+        {
+            if (string.IsNullOrEmpty(fileName))
+                return BadRequest("Brak nazwy pliku.");
+
+            var folderPath = Path.Combine(Directory.GetCurrentDirectory(), "App_Data");
+            var fullPath = Path.Combine(folderPath, fileName);
+
+            if (!System.IO.File.Exists(fullPath))
+                return NotFound();
+
+            return File(System.IO.File.ReadAllBytes(fullPath), "application/octet-stream", fileName);
         }
 
     }
