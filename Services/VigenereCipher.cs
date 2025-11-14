@@ -11,7 +11,7 @@
         {
             for (int i = 0; i < key.Length; i++)
                 if (!char.IsLetter(key[i]))
-                    return null; // error – klucz musi mieć litery
+                    return null; 
 
             string output = string.Empty;
             int nonAlphaCharCount = 0;
@@ -50,10 +50,5 @@
         {
             return Cipher(input, key, false);
         }
-
-        //string text = "Hello, World!";
-        //string cipherText = Encipher(text, "cipher");
-        //string plainText = Decipher(cipherText, "cipher");
-
     }
 }
