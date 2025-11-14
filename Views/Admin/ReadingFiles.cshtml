@@ -29,3 +29,11 @@ else
         <a href="@Url.Action("Index")" class="btn btn-secondary">Powrót</a>
     </form>
 </div>
+
+<div>
+    <p>Tekst: @ViewBag.Input</p>
+    <p>Klucz: @ViewBag.Key</p>
+
+    <p><strong>Szyfr:</strong> @ViewBag.Encrypted</p>
+    <p><strong>Deszyfr:</strong> @ViewBag.Decrypted</p>
+</div>
